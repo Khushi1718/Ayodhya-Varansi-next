@@ -1,52 +1,30 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import BlogList from './BlogList';
-import BlogDetail from './BlogDetail';
+import PackageList from './PackageList';
+import PackageDetail from './PackageDetail';
 import { Loader } from 'lucide-react';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
 
-interface Blog {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  author: string;
-  date: string;
-  thumbnailImage: string;
-  content: string;
-  tags: string[];
-  quotes: string[];
-  additionalImages: string[];
-  coverImage: string;
-  authorRole: string;
-  readTime: string;
-  status?: string;
-}
-
-export default function BlogManager() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+export default function PackageManager() {
+  const [packages, setPackages] = useState<any[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false); // Default to false to show the list of blogs first
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [isViewingDrafts, setIsViewingDrafts] = useState(false);
 
-  // Fetch all blogs on mount
   useEffect(() => {
-    fetchBlogs();
+    fetchPackages();
   }, []);
 
-  const fetchBlogs = async () => {
+  const fetchPackages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/admin/blogs`);
+      const response = await fetch(`${BACKEND_URL}/admin/packages`);
       const data = await response.json();
-
       if (data.success) {
-        setBlogs(data.data);
+        setPackages(data.data);
       }
     } catch (error) {
       console.error('Connection error:', error);
@@ -55,35 +33,35 @@ export default function BlogManager() {
     }
   };
 
-  const handleBlogSelect = (blog: Blog) => {
-    setSelectedBlog(blog);
+  const handlePackageSelect = (pkg: any) => {
+    setSelectedPackage(pkg);
     setIsViewingDrafts(false);
     setShowCreateForm(false);
   };
 
-  const handleBlogDeleted = () => {
-    setSelectedBlog(null);
-    fetchBlogs();
+  const handlePackageDeleted = () => {
+    setSelectedPackage(null);
+    fetchPackages();
   };
 
-  const handleBlogCreated = () => {
-    // setShowCreateForm(false);
-    setSelectedBlog(null);
+  const handlePackageCreated = () => {
+    setSelectedPackage(null);
     setIsViewingDrafts(false);
-    fetchBlogs();
+    setShowCreateForm(false);
+    fetchPackages();
   };
 
-  const drafts = blogs.filter(b => b.status === 'draft');
-  const published = blogs.filter(b => b.status !== 'draft');
+  const drafts = packages.filter(p => p.status === 'draft');
+  const published = packages.filter(p => p.status !== 'draft');
 
   return (
     <div className="flex-1 bg-[#fcfbf9] overflow-hidden flex flex-col h-screen">
-      {/* Header with Navigation */}
+      {/* Header */}
       <div className="bg-white border-b border-gray-100 px-8 pt-8 pb-0 shrink-0">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Editorial Manager</h1>
-            <p className="text-sm text-gray-500 mt-1">Compose and curate your travel narratives</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Travel Packages</h1>
+            <p className="text-sm text-gray-500 mt-1">Design and manage pilgrimage experiences</p>
           </div>
         </div>
 
@@ -92,17 +70,17 @@ export default function BlogManager() {
             onClick={() => {
               setIsViewingDrafts(false);
               setShowCreateForm(false);
-              setSelectedBlog(null);
+              setSelectedPackage(null);
             }}
             className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${
-              !isViewingDrafts && !showCreateForm && !selectedBlog 
+              !isViewingDrafts && !showCreateForm && !selectedPackage 
                 ? 'text-orange-500' 
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            Published Stories
+            Live Packages
             <span className="ml-2 bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded text-[10px]">{published.length}</span>
-            {!isViewingDrafts && !showCreateForm && !selectedBlog && (
+            {!isViewingDrafts && !showCreateForm && !selectedPackage && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
             )}
           </button>
@@ -110,7 +88,7 @@ export default function BlogManager() {
             onClick={() => {
               setIsViewingDrafts(true);
               setShowCreateForm(false);
-              setSelectedBlog(null);
+              setSelectedPackage(null);
             }}
             className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${
               isViewingDrafts 
@@ -127,25 +105,23 @@ export default function BlogManager() {
           <button 
             onClick={() => {
               setShowCreateForm(true);
-              setSelectedBlog(null);
+              setSelectedPackage(null);
               setIsViewingDrafts(false);
             }}
             className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${
-              showCreateForm && !selectedBlog
+              showCreateForm && !selectedPackage
                 ? 'text-orange-500' 
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            New Article
-            {showCreateForm && !selectedBlog && (
+            New Package
+            {showCreateForm && !selectedPackage && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
             )}
           </button>
-          {selectedBlog && (
-            <button 
-              className="pb-4 text-sm font-bold uppercase tracking-widest text-orange-500 relative"
-            >
-              Editing: {selectedBlog.title.substring(0, 20)}...
+          {selectedPackage && (
+            <button className="pb-4 text-sm font-bold uppercase tracking-widest text-orange-500 relative">
+              Editing: {selectedPackage.title.substring(0, 20)}...
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
             </button>
           )}
@@ -155,50 +131,54 @@ export default function BlogManager() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative bg-white">
         {isViewingDrafts ? (
-          <BlogList
+          <PackageList
             title="Manage Drafts"
-            blogs={drafts}
-            selectedBlog={selectedBlog}
-            onSelectBlog={handleBlogSelect}
+            packages={drafts}
+            selectedPackage={selectedPackage}
+            onSelectPackage={handlePackageSelect}
             onCreateNew={() => {
               setShowCreateForm(true);
-              setSelectedBlog(null);
+              setSelectedPackage(null);
               setIsViewingDrafts(false);
             }}
-            onDeleteBlog={handleBlogDeleted}
+            onDeletePackage={handlePackageDeleted}
             loading={loading}
-            onRefresh={fetchBlogs}
+            onRefresh={fetchPackages}
             fullWidth={true}
           />
-        ) : (showCreateForm || selectedBlog) ? (
+        ) : (showCreateForm || selectedPackage) ? (
           <div className="h-full overflow-y-auto">
-            <BlogDetail 
-              blog={selectedBlog} 
-              onDeleted={handleBlogDeleted} 
-              onCreated={handleBlogCreated}
-              onViewDrafts={() => setIsViewingDrafts(true)}
+            <PackageDetail 
+              packageData={selectedPackage} 
+              onDeleted={handlePackageDeleted} 
+              onCreated={handlePackageCreated}
               onBack={() => {
-                if (selectedBlog) {
-                  setSelectedBlog(null);
+                if (selectedPackage) {
+                  setSelectedPackage(null);
                 } else {
                   setShowCreateForm(false);
                 }
               }}
+              onViewDrafts={() => {
+                setIsViewingDrafts(true);
+                setShowCreateForm(false);
+                setSelectedPackage(null);
+              }}
             />
           </div>
         ) : (
-          <BlogList
-            title="Manage Published Stories"
-            blogs={published}
-            selectedBlog={selectedBlog}
-            onSelectBlog={handleBlogSelect}
+          <PackageList
+            title="Manage Published Packages"
+            packages={published}
+            selectedPackage={selectedPackage}
+            onSelectPackage={handlePackageSelect}
             onCreateNew={() => {
               setShowCreateForm(true);
-              setSelectedBlog(null);
+              setSelectedPackage(null);
             }}
-            onDeleteBlog={handleBlogDeleted}
+            onDeletePackage={handlePackageDeleted}
             loading={loading}
-            onRefresh={fetchBlogs}
+            onRefresh={fetchPackages}
             fullWidth={true}
           />
         )}
@@ -206,6 +186,3 @@ export default function BlogManager() {
     </div>
   );
 }
-
-
-

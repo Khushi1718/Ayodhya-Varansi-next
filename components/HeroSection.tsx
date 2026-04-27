@@ -73,15 +73,15 @@ export default function HeroSection() {
         .hero-bg { animation: zoomBg 10s ease-out forwards; }
         
         .glass-form {
-          background: rgba(10, 10, 10, 0.7);
-          backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6);
+          background: rgba(12, 12, 12, 0.93);
+          backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05) inset;
         }
         
         .hero-input {
-          background: rgba(255, 255, 255, 0.05) !important;
-          border-color: rgba(255, 255, 255, 0.1) !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+          border-color: rgba(255, 255, 255, 0.15) !important;
           color: white !important;
           height: 48px !important;
           font-size: 14px !important;
@@ -141,30 +141,30 @@ export default function HeroSection() {
 
             {/* Right Form */}
             <div className="hero-form-container w-full max-w-[400px] shrink-0 h-slide-enter-d2">
-              <div className="glass-form rounded-[32px] p-8 md:p-12 border border-white/10 relative overflow-hidden h-[520px] flex flex-col justify-center">
+              <div className="glass-form rounded-[32px] p-8 md:p-10 border border-white/10 relative overflow-hidden flex flex-col justify-center">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#E87B2C]/10 blur-[80px] pointer-events-none" />
                 
                 <div className="relative z-10">
-                  <h3 className="font-heading text-xl md:text-2xl text-white font-bold mb-2 tracking-tight">Plan Your Journey</h3>
-                  <p className="text-white text-xs mb-10 font-body leading-relaxed">Let our experts craft your sacred pilgrimage.</p>
+                  <h3 className="font-heading text-xl md:text-2xl text-white font-bold mb-1 tracking-tight text-center lg:text-left">Plan Your Journey</h3>
+                  <p className="text-white/60 text-[10px] mb-8 font-body leading-relaxed text-center lg:text-left uppercase tracking-widest font-bold">Simple. Personal. Extraordinary.</p>
                   
-                  <form className="space-y-7" onSubmit={(e) => e.preventDefault()}>
-                    <div className="space-y-2.5">
-                      <label className="text-[9px] text-white uppercase tracking-[0.2em] ml-1 font-bold">Full Name</label>
+                  <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                    <div className="space-y-2">
+                      <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Full Name</label>
                       <Input placeholder="Your Name" className="hero-input font-body bg-white/5" />
                     </div>
-                    <div className="space-y-2.5">
-                      <label className="text-[9px] text-white uppercase tracking-[0.2em] ml-1 font-bold">Phone Number</label>
-                      <Input placeholder="+91 00000 00000" className="hero-input font-body bg-white/5" />
+                    <div className="space-y-2">
+                      <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Phone Number</label>
+                      <Input placeholder="+91 XXXXX XXXXX" className="hero-input font-body bg-white/5" />
                     </div>
-                    <div className="space-y-2.5">
-                      <label className="text-[9px] text-white uppercase tracking-[0.2em] ml-1 font-bold">Preferred Destination</label>
-                      <Input placeholder="e.g., Varanasi, Ayodhya" className="hero-input font-body bg-white/5" />
+                    <div className="space-y-2">
+                      <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Your Message</label>
+                      <Input placeholder="E.g. Ayodhya trip for 4 people..." className="hero-input font-body bg-white/5" />
                     </div>
 
-                    <Button className="w-full h-14 bg-[#E87B2C] hover:bg-[#d16a1b] text-white font-bold text-sm rounded-2xl transition-all duration-300 shadow-[0_12px_30px_rgba(232,123,44,0.3)] flex items-center justify-center gap-2 group mt-6 border-none">
+                    <Button className="w-full h-12 bg-[#E87B2C] hover:bg-[#d16a1b] text-white font-bold text-xs rounded-xl transition-all duration-300 shadow-[0_8px_20px_rgba(232,123,44,0.2)] flex items-center justify-center gap-2 group mt-4 border-none">
                       Get Expert Advice
-                      <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </form>
                 </div>

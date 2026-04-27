@@ -70,7 +70,7 @@ export async function closeDatabase() {
     await cachedClient.close();
     cachedClient = null;
     cachedDb = null;
-    console.log('✅ MongoDB connection closed');
+    console.log('MongoDB connection closed');
   }
 }
 

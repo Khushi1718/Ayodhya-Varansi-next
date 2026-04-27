@@ -2,7 +2,7 @@
 
 Divine Journeys CMS Backend - Express API running on port 17182
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Installation
 
@@ -24,7 +24,7 @@ npm run dev
 
 Server runs on: **http://localhost:17182**
 
-## 📚 API Endpoints
+##  API Endpoints
 
 ### Get All Blogs
 ```bash

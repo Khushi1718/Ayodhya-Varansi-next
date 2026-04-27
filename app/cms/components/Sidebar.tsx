@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, FileText, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, FileText, Settings, LogOut, ChevronRight, MessageSquare, Package, Compass } from 'lucide-react';
 
 interface SidebarProps {
   activePage: string;
@@ -11,16 +11,30 @@ interface SidebarProps {
 
 export default function Sidebar({ activePage, setActivePage }: SidebarProps) {
   const menuItems = [
+    /* {
+      id: 'overview',
+      label: 'Overview',
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    }, */
     {
       id: 'blogs',
-      label: 'Blogs',
+      label: 'Blog Stories',
       icon: <FileText className="w-5 h-5" />,
     },
-    // Future menu items
     {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings className="w-5 h-5" />,
+      id: 'packages',
+      label: 'Tour Packages',
+      icon: <Compass className="w-5 h-5" />,
+    },
+    {
+      id: 'enquiries',
+      label: 'Enquiry Details',
+      icon: <MessageSquare className="w-5 h-5" />,
+    },
+    {
+      id: 'custom-packages',
+      label: 'Customised Package Details',
+      icon: <Package className="w-5 h-5" />,
     },
   ];
 
@@ -73,5 +87,3 @@ export default function Sidebar({ activePage, setActivePage }: SidebarProps) {
     </aside>
   );
 }
-
-

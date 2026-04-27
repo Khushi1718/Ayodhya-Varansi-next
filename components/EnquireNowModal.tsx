@@ -1,99 +1,126 @@
 "use client";
-import { DialogDescription } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { X } from "lucide-react";
 
 interface EnquireNowModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+
 const EnquireNowModal = ({ open, onOpenChange }: EnquireNowModalProps) => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    message: "",
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormData({ name: "", phone: "", message: "" });
-    onOpenChange(false);
+    setLoading(true);
+    try {
+      const response = await fetch(`${BACKEND_URL}/enquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        setFormData({ name: "", phone: "" });
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Error submitting enquiry:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[92%] sm:max-w-[420px] p-6 md:p-10 border-none bg-white rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden">
-        <div className="text-center mb-6 md:mb-10">
-          <DialogTitle className="font-heading text-2xl md:text-4xl text-gray-900 mb-2 md:mb-4 font-bold tracking-tight">
-            Enquire Now
+      <DialogContent className="p-0 border-none bg-white rounded-[24px] overflow-hidden max-w-[92%] sm:max-w-[450px] shadow-2xl">
+        {/* Orange Header */}
+        <div className="bg-[#FF6B00] p-6 md:p-8 relative">
+          <button 
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-900 hover:scale-110 transition-transform z-10"
+          >
+            <X size={20} />
+          </button>
+          
+          <DialogTitle className="text-white text-2xl md:text-3xl font-bold mb-2">
+            Get Free Consultation
           </DialogTitle>
-          <DialogDescription className="text-gray-500 text-[13px] md:text-[14px] font-medium leading-relaxed px-2">
-            Leave your details below and our experts will reach out to you shortly.
+          <DialogDescription className="text-white/90 text-sm md:text-base font-medium">
+            Share your details. Our team will contact you shortly.
           </DialogDescription>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-          <div className="space-y-1.5">
-            <Label htmlFor="enquire-name" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Full Name
-            </Label>
-            <Input 
-              id="enquire-name" 
-              name="name" 
-              value={formData.name} 
-              onChange={handleInputChange} 
-              placeholder="Ramin" 
-              className="h-11 md:h-12 bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl md:rounded-2xl px-4 md:px-5 text-sm placeholder:text-gray-300 transition-all outline-none" 
-              required 
-            />
-          </div>
+        {/* Form Body */}
+        <div className="p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label className="text-[13px] font-medium text-gray-500 ml-1">
+                Full Name *
+              </Label>
+              <Input 
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Your full name"
+                className="h-12 bg-white border-gray-200 rounded-xl px-4 text-sm focus:border-[#FF6B00] focus:ring-0 transition-all outline-none"
+                required
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="enquire-phone" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Phone Number
-            </Label>
-            <Input 
-              id="enquire-phone" 
-              name="phone" 
-              type="tel" 
-              value={formData.phone} 
-              onChange={handleInputChange} 
-              placeholder="+91 XXXXX XXXXX" 
-              className="h-11 md:h-12 bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl md:rounded-2xl px-4 md:px-5 text-sm placeholder:text-gray-300 transition-all outline-none" 
-              required 
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label className="text-[13px] font-medium text-gray-500 ml-1">
+                Phone Number *
+              </Label>
+              <Input 
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="+91 XXXXX XXXXX"
+                className="h-12 bg-white border-gray-200 rounded-xl px-4 text-sm focus:border-[#FF6B00] focus:ring-0 transition-all outline-none"
+                required
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="enquire-message" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Your Message
-            </Label>
-            <Textarea 
-              id="enquire-message" 
-              name="message" 
-              value={formData.message} 
-              onChange={handleInputChange} 
-              placeholder="Tell us about your travel plans..." 
-              className="min-h-[80px] md:min-h-[100px] bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl md:rounded-2xl px-4 md:px-5 py-3 md:py-4 text-sm placeholder:text-gray-300 resize-none transition-all outline-none" 
-              required 
-            />
-          </div>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button 
+                type="submit"
+                disabled={loading}
+                className="bg-[#FF6B00] text-white font-bold h-12 rounded-full hover:brightness-105 active:scale-[0.98] transition-all text-xs sm:text-sm shadow-lg shadow-[#FF6B00]/20"
+              >
+                {loading ? "Connecting..." : "Connect with Expert"}
+              </button>
+              
+              <a 
+                href="https://wa.me/91XXXXXXXXXX" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-[#00D95F] text-white font-bold h-12 rounded-full flex items-center justify-center hover:brightness-105 active:scale-[0.98] transition-all text-xs sm:text-sm shadow-lg shadow-[#00D95F]/20"
+              >
+                Chat on WhatsApp
+              </a>
+            </div>
 
-          <div className="pt-2">
-            <button type="submit" className="w-full bg-[hsl(var(--primary))] text-white font-bold h-12 md:h-14 rounded-xl md:rounded-2xl hover:brightness-105 active:scale-[0.98] transition-all text-sm md:text-base shadow-lg shadow-[hsl(var(--primary))]/20">
-              Submit Enquiry
-            </button>
-          </div>
-        </form>
+            <p className="text-[11px] text-gray-400 text-center font-medium mt-4">
+              By submitting, you agree to be contacted via call or WhatsApp.
+            </p>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

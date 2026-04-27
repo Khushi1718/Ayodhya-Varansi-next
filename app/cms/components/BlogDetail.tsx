@@ -36,6 +36,7 @@ interface Blog {
   additionalImages: string[];
   coverImage: string;
   readTime?: string;
+  status?: string;
 }
 
 interface BlogDetailProps {
@@ -43,9 +44,10 @@ interface BlogDetailProps {
   onDeleted?: () => void;
   onCreated?: () => void;
   onBack?: () => void;
+  onViewDrafts?: () => void;
 }
 
-export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogDetailProps) {
+export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewDrafts }: BlogDetailProps) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
@@ -68,6 +70,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
     tags: '',
     quotes: '',
     additionalImages: '',
+    status: 'published'
   };
 
   const [form, setForm] = useState(initialFormState);
@@ -80,6 +83,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
         tags: blog.tags?.join(', ') || '',
         quotes: blog.quotes?.join('\n') || '',
         additionalImages: blog.additionalImages?.join('\n') || '',
+        status: blog.status || 'published'
       });
     } else {
       setForm(initialFormState);
@@ -115,8 +119,8 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setMessage(null);
 
@@ -125,11 +129,14 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
       const quotesArray = form.quotes.split('\n').map((q) => q.trim()).filter(Boolean);
       const imagesArray = form.additionalImages.split('\n').map((i) => i.trim()).filter(Boolean);
 
-      // Validate required fields
+      // Validate required fields (Drafts only require title)
       if (!form.title.trim()) throw new Error('Title is required');
-      if (!form.subtitle.trim()) throw new Error('Summary is required');
-      if (!form.author.trim()) throw new Error('Author is required');
-      if (!form.content.trim()) throw new Error('Content is required');
+      
+      if (!isDraft) {
+        if (!form.subtitle.trim()) throw new Error('Summary is required');
+        if (!form.author.trim()) throw new Error('Author is required');
+        if (!form.content.trim()) throw new Error('Content is required');
+      }
 
       const payload = {
         ...form,
@@ -137,6 +144,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
         tags: tagsArray,
         quotes: quotesArray,
         additionalImages: imagesArray,
+        status: isDraft ? 'draft' : 'published'
       };
 
       const url = blog ? `${BACKEND_URL}/blogs/${blog.id}` : `${BACKEND_URL}/blogs`;
@@ -156,7 +164,12 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: blog ? 'Story updated successfully!' : 'Story published successfully!' });
+        setMessage({ 
+          type: 'success', 
+          text: isDraft 
+            ? 'Draft saved successfully!' 
+            : (blog ? 'Story updated successfully!' : 'Story published successfully!') 
+        });
         if (onCreated) setTimeout(() => onCreated(), 1500);
       } else {
         setMessage({ type: 'error', text: `Error: ${data.error}` });
@@ -246,10 +259,24 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
           </button>
           <div>
             <h1 className="text-lg font-bold text-gray-900">{blog ? 'Edit Story' : 'Create New Story'}</h1>
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Premium Editor</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">Premium Editor</p>
+              {form.status === 'draft' && (
+                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[9px] font-bold uppercase tracking-widest">Draft</span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            onClick={onViewDrafts}
+            className="text-xs font-bold uppercase tracking-wider text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-9 px-4 rounded-xl"
+          >
+            <FileText className="w-3.5 h-3.5 mr-2" />
+            View Drafts
+          </Button>
+
           {blog && (
             <Button
               variant="outline"
@@ -270,16 +297,28 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack }: BlogD
               Delete
             </Button>
           )}
+          
           <Button
-            onClick={handleSubmit}
+            variant="outline"
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={loading}
+            className="text-xs font-bold uppercase tracking-wider border-gray-200 hover:bg-gray-50 h-9 px-4 rounded-xl"
+          >
+            {loading ? <Loader className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
+            Save Draft
+          </Button>
+
+          <Button
+            onClick={(e) => handleSubmit(e, false)}
             disabled={loading}
             className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100 px-6 h-9 rounded-xl font-bold uppercase tracking-wider text-xs transition-all active:scale-95"
           >
             {loading ? <Loader className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
-            {blog ? 'Save Changes' : 'Publish Story'}
+            {blog ? 'Update Story' : 'Publish Story'}
           </Button>
         </div>
       </div>
+
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-4xl mx-auto space-y-12">
