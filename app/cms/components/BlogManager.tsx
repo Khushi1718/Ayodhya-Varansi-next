@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import BlogList from './BlogList';
 import BlogDetail from './BlogDetail';
 import { Loader } from 'lucide-react';
-import { Blog } from './types';
+import { Blog, BlogListProps } from './types';
 
 const API_BASE = "/api";
 
@@ -37,7 +37,7 @@ export default function BlogManager() {
     }
   };
 
-  const handleBlogSelect = (blog: Blog) => {
+  const handleBlogSelect: BlogListProps['onSelectBlog'] = (blog) => {
     setSelectedBlog(blog);
     setIsViewingDrafts(false);
     setShowCreateForm(false);
@@ -188,6 +188,5 @@ export default function BlogManager() {
     </div>
   );
 }
-
 
 

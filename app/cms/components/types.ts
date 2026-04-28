@@ -7,14 +7,16 @@ export interface Blog {
   author: string;
   date: string;
   thumbnailImage: string;
-  content: string;
-  tags: string[];
-  quotes: string[];
-  additionalImages: string[];
-  coverImage: string;
-  authorRole: string;
-  readTime: string;
   status?: string;
+
+  // Detail fields may be missing in lightweight list payloads.
+  content?: string;
+  tags?: string[];
+  quotes?: string[];
+  additionalImages?: string[];
+  coverImage?: string;
+  authorRole?: string;
+  readTime?: string;
 }
 
 export interface BlogDetailProps {
