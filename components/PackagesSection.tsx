@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, MapPin, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Clock, MapPin, ArrowRight, ChevronLeft, ChevronRight, Star, Loader } from "lucide-react";
 import { useModal } from "@/lib/ModalContext";
 
 import pkgAyodhya       from "@/assets/pkg-ayodhya.png";
@@ -13,10 +13,7 @@ import pkgSarnath       from "@/assets/pkg-sarnath.png";
 import pkgCircuit       from "@/assets/pkg-circuit.png";
 import pkgGangesSunrise from "@/assets/pkg-ganges-sunrise.png";
 
-/* ------------------------------------------------------------------ */
-/*  DATA                                                                */
-/* ------------------------------------------------------------------ */
-const packages = [
+const fallbackPackages = [
   {
     id: 1,
     image: pkgAyodhya,
@@ -138,20 +135,23 @@ const PackageCard = React.memo(({ p, i, active, onEnquire }: { p: any, i: number
           <span>India</span>
         </div>
 
-        <div className="ps-card-highlights">
-          {p.highlights.slice(0, 3).map((h: string) => (
-            <div key={h} className="ps-card-highlight-item">
-              <span className="ps-card-highlight-dot" style={{ width: 4, height: 4, borderRadius: "50%", background: "hsl(var(--primary))", marginTop: 7 }} />
-              {h}
+        {p.highlights && p.highlights.length > 0 && (
+          <>
+            <div className="ps-card-highlights">
+              {p.highlights.slice(0, 3).map((h: string) => (
+                <div key={h} className="ps-card-highlight-item">
+                  <span className="ps-card-highlight-dot" style={{ width: 4, height: 4, borderRadius: "50%", background: "hsl(var(--primary))", marginTop: 7 }} />
+                  {h}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="ps-card-divider" />
+          </>
+        )}
 
-        <div className="ps-card-divider" />
-
-        <div className="ps-card-buttons">
+        <div className="ps-card-buttons" style={{ marginTop: 'auto' }}>
           <Link 
-            href="/packages/divine-ayodhya-kashi-pilgrimage"
+            href={`/packages/${p.slug || p.id}`}
             className="ps-card-btn ps-card-btn-secondary"
           >
             View Details
@@ -173,12 +173,58 @@ PackageCard.displayName = "PackageCard";
 const PackagesSection = () => {
   const { openEnquiry } = useModal();
   const trackRef    = useRef<HTMLDivElement>(null);
+  const [packages, setPackages] = useState<any[]>(fallbackPackages);
+  const [loading, setLoading] = useState(true);
   const [active, setActive]     = useState(0);
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStart   = useRef(0);
   const timer       = useRef<ReturnType<typeof setInterval> | null>(null);
-  const total       = packages.length;
+  const [total, setTotal] = useState(fallbackPackages.length);
+
+  // Fetch packages from CMS on mount
+  useEffect(() => {
+    const fetchPackagesData = async () => {
+      try {
+        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+        const response = await fetch(`${BACKEND_URL}/packages`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const cmsPackages = data.data.map((pkg: any) => ({
+            id: pkg.id || pkg._id,
+            image: pkg.images?.main || pkg.image || pkgAyodhya,
+            destination: pkg.destination || 'Destination',
+            tag: pkg.destination || 'Pilgrimage',
+            title: pkg.title || 'Package Title',
+            duration: pkg.duration || '3 Days · 2 Nights',
+            highlights: Array.isArray(pkg.highlights) && pkg.highlights.length > 0 ? pkg.highlights.slice(0, 3) : [],
+            places: pkg.highlights || [],
+            rating: pkg.rating || 4.8,
+            reviews: pkg.reviews || 100,
+            accent: '#c27b4a',
+            slug: pkg.slug || pkg.id || pkg._id
+          }));
+          setPackages(cmsPackages);
+          setTotal(cmsPackages.length);
+        } else {
+          setPackages(fallbackPackages);
+          setTotal(fallbackPackages.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch packages from CMS:', error);
+        setPackages(fallbackPackages);
+        setTotal(fallbackPackages.length);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackagesData();
+  }, []);
 
   /* ── navigation ── */
   const goTo = useCallback((idx: number) => {

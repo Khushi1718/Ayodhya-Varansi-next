@@ -20,6 +20,8 @@ import subImg2 from "@/assets/Cyberian birds on prayagraj.jpg";
 import subImg3 from "@/assets/ -8.jpg";
 import subImg4 from "@/assets/ -11.jpg";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+
 // DUMMY DATA FOR TEMPLATE
 const dummyPackage = {
   title: "Divine Ayodhya & Kashi Pilgrimage",
@@ -156,13 +158,52 @@ const dummyPackage = {
     }
   ]
 };
+
 export default function PackageTemplate() {
   const params = useParams();
+  const [pkg, setPkg] = useState<any>(dummyPackage);
   const [openDay, setOpenDay] = useState(0);
   const [enquireOpen, setEnquireOpen] = useState(false);
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  // Fetch package from CMS
+  useEffect(() => {
+    if (params?.slug && params.slug !== 'template') {
+      fetchPackage(params.slug as string);
+    }
+  }, [params?.slug]);
+
+  const fetchPackage = async (slug: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/packages/${slug}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch');
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        const cmsData = data.data;
+        setPkg({
+          ...dummyPackage,
+          ...cmsData,
+          highlights: cmsData.highlights || dummyPackage.highlights,
+          itinerary: cmsData.itinerary || dummyPackage.itinerary,
+          included: cmsData.inclusions || cmsData.included || dummyPackage.included,
+          excluded: cmsData.exclusions || cmsData.excluded || dummyPackage.excluded,
+          faq: cmsData.faqs || cmsData.faq || dummyPackage.faq,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching package:", error);
+      setPkg(dummyPackage);
+    }
+  };
 
   // Auto-slide testimonials (Native Scroll)
   useEffect(() => {
@@ -203,8 +244,8 @@ export default function PackageTemplate() {
 
   const handleShare = async () => {
     const shareData = {
-      title: dummyPackage.title,
-      text: dummyPackage.about,
+      title: pkg.title,
+      text: pkg.about,
       url: typeof window !== "undefined" ? window.location.href : "",
     };
 
@@ -233,21 +274,21 @@ export default function PackageTemplate() {
              <span>/</span>
              <Link href="/packages" className="hover:text-[hsl(var(--primary))] transition-colors">Packages</Link>
              <span>/</span>
-             <span className="text-gray-900 truncate max-w-[150px] sm:max-w-none">{dummyPackage.title}</span>
+             <span className="text-gray-900 truncate max-w-[150px] sm:max-w-none">{pkg.title}</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="max-w-4xl">
               <h1 className="font-heading text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
-                {dummyPackage.title}
+                {pkg.title}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-gray-500 text-sm font-medium">
                 <div className="flex items-center gap-1 text-gray-900">
                   <Star size={14} className="text-yellow-400 fill-yellow-400" />
-                  <span className="font-bold">{dummyPackage.rating}</span> 
+                  <span className="font-bold">{pkg.rating}</span> 
                 </div>
-                <span className="flex items-center gap-1.5"><MapPin size={16} /> {dummyPackage.destination}</span>
-                <span className="flex items-center gap-1.5"><Clock size={16} /> {dummyPackage.duration}</span>
+                <span className="flex items-center gap-1.5"><MapPin size={16} /> {pkg.destination}</span>
+                <span className="flex items-center gap-1.5"><Clock size={16} /> {pkg.duration}</span>
               </div>
             </div>
             
@@ -268,9 +309,9 @@ export default function PackageTemplate() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
               <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full z-10">
                  <p className="text-[10px] font-bold text-[hsl(var(--primary))] uppercase tracking-widest mb-2">Experience My India Exclusive</p>
-                 <h3 className="font-heading text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-3 shadow-sm leading-tight">{dummyPackage.title}</h3>
+                 <h3 className="font-heading text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-3 shadow-sm leading-tight">{pkg.title}</h3>
                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-[10px] font-medium border border-white/20">
-                   Save {dummyPackage.savings} • VIP Darshan • Premium Stays
+                   Save {pkg.savings} • VIP Darshan • Premium Stays
                  </div>
               </div>
             </div>
@@ -327,11 +368,11 @@ export default function PackageTemplate() {
             <div className="space-y-6">
               <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900">About the Journey</h2>
               <p className="text-gray-600 leading-relaxed text-[15px] md:text-base">
-                {dummyPackage.about}
+                {pkg.about}
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dummyPackage.highlights.map((h, i) => (
+                {pkg.highlights.map((h: string, i: number) => (
                   <div key={i} className="flex items-center gap-3 bg-[#fafaf8] p-4 rounded-xl border border-gray-100 transition-colors">
                     <Check size={16} className="text-[hsl(var(--primary))] shrink-0" strokeWidth={3} />
                     <span className="text-gray-700 font-semibold text-sm md:text-base">{h}</span>
@@ -347,12 +388,12 @@ export default function PackageTemplate() {
                     <Calendar size={24} className="text-[hsl(var(--primary))]" /> Itinerary
                  </h2>
                  <div className="inline-flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-full border border-gray-100 self-start">
-                    <Clock size={14} /> {dummyPackage.duration}
+                    <Clock size={14} /> {pkg.duration}
                  </div>
               </div>
               
               <div className="space-y-4 relative before:absolute before:left-[31px] before:top-10 before:bottom-10 before:w-0.5 before:bg-orange-100 before:hidden md:before:block">
-                {dummyPackage.itinerary.map((day, i) => (
+                {pkg.itinerary.map((day: any, i: number) => (
                   <div key={i} className={`group relative border rounded-[24px] overflow-hidden bg-white transition-all duration-300 ${openDay === i ? 'border-orange-200 shadow-xl shadow-orange-50/50' : 'border-gray-100 shadow-sm'}`}>
                     <button 
                       onClick={() => setOpenDay(openDay === i ? -1 : i)}
@@ -434,7 +475,7 @@ export default function PackageTemplate() {
                   What's Included
                 </h3>
                 <ul className="space-y-4 relative z-10">
-                  {dummyPackage.included.map((item, i) => (
+                  {pkg.included.map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-gray-700 text-[15px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                       {item}
@@ -452,7 +493,7 @@ export default function PackageTemplate() {
                   What's Excluded
                 </h3>
                 <ul className="space-y-4 relative z-10">
-                  {dummyPackage.excluded.map((item, i) => (
+                  {pkg.excluded.map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-gray-700 text-[15px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
                       {item}
@@ -466,7 +507,7 @@ export default function PackageTemplate() {
             <div>
               <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h2>
               <div className="space-y-4">
-                {dummyPackage.faq.map((f, i) => (
+                {pkg.faq.map((f: any, i: number) => (
                   <div key={i} className="bg-[#fafaf8] border border-gray-100 rounded-2xl p-6 hover:border-gray-200 transition-colors">
                     <h4 className="font-bold text-gray-900 mb-3 text-lg">{f.q}</h4>
                     <p className="text-gray-600 text-[15px] leading-relaxed">{f.a}</p>
@@ -512,7 +553,7 @@ export default function PackageTemplate() {
               <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-6 overflow-hidden relative">
                  <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Premium Package</span>
-                    <span className="bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Save {dummyPackage.savings}</span>
+                    <span className="bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Save {pkg.savings}</span>
                  </div>
                  <button onClick={() => setEnquireOpen(true)} className="w-full bg-[hsl(var(--primary))] text-white font-bold h-12 rounded-xl hover:brightness-105 active:scale-[0.98] transition-all text-sm shadow-lg shadow-orange-100">
                    Check Price & Availability
@@ -566,19 +607,19 @@ export default function PackageTemplate() {
                <div className="w-full lg:w-[350px] bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
                   <h3 className="text-sm font-bold text-orange-600 mb-6 uppercase tracking-wider">Guest Reviews</h3>
                   <div className="flex items-center gap-6 mb-8">
-                     <span className="text-6xl font-bold text-gray-900 tracking-tighter">{dummyPackage.reviewStats.average}</span>
+                     <span className="text-6xl font-bold text-gray-900 tracking-tighter">{pkg.reviewStats.average}</span>
                      <div>
                         <div className="flex gap-1 mb-1">
                            {[...Array(5)].map((_, i) => (
                               <Star key={i} size={18} className="text-orange-500 fill-orange-500" />
                            ))}
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Based on {dummyPackage.reviewStats.total}+ reviews</p>
+                        <p className="text-gray-500 text-sm font-medium">Based on {pkg.reviewStats.total}+ reviews</p>
                      </div>
                   </div>
 
                   <div className="space-y-3">
-                     {dummyPackage.reviewStats.distribution.map((item, i) => (
+                     {pkg.reviewStats.distribution.map((item: any, i: number) => (
                         <div key={i} className="flex items-center gap-4">
                            <span className="text-xs font-bold text-gray-600 w-2">{item.stars}</span>
                            <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -600,7 +641,7 @@ export default function PackageTemplate() {
                     className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 hide-scrollbar px-2"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   >
-                     {dummyPackage.testimonials.map((t, i) => (
+                     {pkg.testimonials.map((t: any, i: number) => (
                         <div 
                           key={i} 
                           className="snap-start w-[320px] min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-3xl p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex-shrink-0 flex flex-col group relative"
@@ -650,7 +691,7 @@ export default function PackageTemplate() {
                      
                      {/* Progress Dots */}
                      <div className="flex gap-2">
-                        {dummyPackage.testimonials.map((_, i) => (
+                        {pkg.testimonials.map((_, i: number) => (
                            <button 
                              key={i}
                              onClick={() => {

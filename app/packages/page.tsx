@@ -9,7 +9,7 @@ import Image from "next/image";
 
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { Clock, MapPin, Star, SlidersHorizontal, ChevronLeft, ChevronRight, Users, Award } from "lucide-react";
+import { Clock, MapPin, Star, SlidersHorizontal, ChevronLeft, ChevronRight, Users, Award, Loader } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
@@ -82,6 +82,8 @@ const StatCard = ({ label, value, suffix, decimals, delay }: { label: string; va
 };
 
 const Packages = () => {
+  const [packages, setPackages] = useState<any[]>(allPackages);
+  const [loading, setLoading] = useState(true);
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -89,7 +91,41 @@ const Packages = () => {
   const { openEnquiry } = useModal();
   const { ref, isVisible } = useScrollAnimation(0.05);
 
-  const filtered = allPackages.filter((pkg) => {
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  const fetchPackages = async () => {
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+      const response = await fetch(`${BACKEND_URL}/packages`);
+      const data = await response.json();
+      
+      if (data.success && data.data.length > 0) {
+        // Map dynamic packages to match the local UI format
+        const dynamicPackages = data.data.map((pkg: any) => ({
+          ...pkg,
+          image: pkg.images?.main || ayodhyaTemple, // Use fallback if no image
+          title: pkg.title,
+          destination: pkg.destination,
+          duration: pkg.duration,
+          durationCategory: pkg.durationCategory,
+          highlights: pkg.highlights || [],
+          rating: pkg.rating || 5.0,
+          slug: pkg.slug
+        }));
+        
+        // Merge: Dynamic first, then static
+        setPackages([...dynamicPackages, ...allPackages]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch packages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = packages.filter((pkg) => {
     if (selectedDestination && pkg.destination !== selectedDestination) return false;
     if (selectedDuration && pkg.durationCategory !== selectedDuration) return false;
     return true;
@@ -267,7 +303,12 @@ const Packages = () => {
           </aside>
 
           <div className="flex-1 min-h-0">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader className="w-8 h-8 text-primary animate-spin mb-4" />
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Loading Experiences...</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-20 bg-muted/30 rounded-xl border border-border">
                 <p className="font-heading text-xl text-foreground mb-2">No packages found</p>
                 <p className="text-muted-foreground text-sm">Discover divine journeys tailored for your soul</p>
@@ -288,7 +329,7 @@ const Packages = () => {
                     style={{ transitionDelay: `${i * 80}ms` }}
                   >
 
-                    <Link href="/packages/divine-ayodhya-kashi-pilgrimage" className="block relative h-48 overflow-hidden">
+                    <Link href={`/packages/${pkg.slug || 'divine-ayodhya-kashi-pilgrimage'}`} className="block relative h-48 overflow-hidden">
                       <Image 
                         src={pkg.image} 
                         alt={pkg.title} 
@@ -306,7 +347,7 @@ const Packages = () => {
                       </div>
                     </Link>
                     <div className="p-5 space-y-3">
-                      <Link href="/packages/divine-ayodhya-kashi-pilgrimage" className="block hover:text-primary transition-colors">
+                      <Link href={`/packages/${pkg.slug || 'divine-ayodhya-kashi-pilgrimage'}`} className="block hover:text-primary transition-colors">
                         <h3 className="font-heading text-lg font-bold text-foreground">{pkg.title}</h3>
                       </Link>
                       <div className="flex items-center gap-3 text-muted-foreground text-sm">
@@ -314,7 +355,7 @@ const Packages = () => {
                         <span className="flex items-center gap-1"><MapPin size={13} /> India</span>
                       </div>
                       <ul className="space-y-1.5">
-                        {pkg.highlights.map((h) => (
+                        {pkg.highlights.map((h: string) => (
                           <li key={h} className="text-sm text-muted-foreground flex items-center gap-2">
                             <span className="w-1 h-1 rounded-full bg-primary" />
                             {h}
@@ -322,7 +363,7 @@ const Packages = () => {
                         ))}
                       </ul>
                       <div className="flex gap-2 pt-3 border-t border-border">
-                        <Link href="/packages/template" className="btn-outline-divine text-xs py-2 px-4 flex-1 text-center flex items-center justify-center">View Details</Link>
+                        <Link href={`/packages/${pkg.slug || 'template'}`} className="btn-outline-divine text-xs py-2 px-4 flex-1 text-center flex items-center justify-center">View Details</Link>
                         <button onClick={openEnquiry} className="btn-divine text-xs py-2 px-4 flex-1">Enquire Now</button>
                       </div>
                     </div>

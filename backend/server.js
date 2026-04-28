@@ -13,6 +13,14 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb' }));
 
+// Add no-cache headers to all responses
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 // DATABASE CONNECTION 
 // Initialize database connection on server start
 
@@ -241,7 +249,12 @@ app.get('/admin/blogs', async (req, res) => {
 app.get('/packages', async (req, res) => {
   try {
     const packagesCollection = db.collection('packages');
-    const packages = await packagesCollection.find({ status: 'published' }).toArray();
+    const packages = await packagesCollection.find({ 
+      $or: [
+        { status: 'published' },
+        { status: { $exists: false } }
+      ]
+    }).toArray();
     res.json({ success: true, data: packages });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -251,9 +264,15 @@ app.get('/packages', async (req, res) => {
 app.get('/packages/:id', async (req, res) => {
   try {
     const packagesCollection = db.collection('packages');
-    const pkg = await packagesCollection.findOne({
-      $or: [{ id: req.params.id }, { slug: req.params.id }]
-    });
+    // Try to find by custom id first, then by MongoDB _id
+    const query = { $or: [{ id: req.params.id }, { slug: req.params.id }] };
+    
+    // Try MongoDB ObjectId if it matches the pattern
+    if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: new ObjectId(req.params.id) });
+    }
+    
+    const pkg = await packagesCollection.findOne(query);
     if (!pkg) return res.status(404).json({ success: false, error: 'Package not found' });
     res.json({ success: true, data: pkg });
   } catch (error) {
@@ -283,26 +302,80 @@ app.post('/packages', async (req, res) => {
 app.put('/packages/:id', async (req, res) => {
   try {
     const packagesCollection = db.collection('packages');
-    const existing = await packagesCollection.findOne({ id: req.params.id });
+    
+    // Build query to find by id or _id
+    const query = { $or: [{ id: req.params.id }] };
+    if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: new ObjectId(req.params.id) });
+    }
+    
+    const existing = await packagesCollection.findOne(query);
     if (!existing) return res.status(404).json({ success: false, error: 'Package not found' });
 
+    // Remove MongoDB-specific fields that shouldn't be updated
+    const { _id, createdAt, ...updateData } = req.body;
+    
     const updated = {
       ...existing,
-      ...req.body,
-      id: req.params.id,
+      ...updateData,
       updatedAt: new Date().toISOString()
     };
-    await packagesCollection.updateOne({ id: req.params.id }, { $set: updated });
-    res.json({ success: true, data: updated });
+    
+    // Remove _id from the update to prevent immutable field error
+    delete updated._id;
+    
+    // Update by the same criteria used to find
+    const updateQuery = existing.id 
+      ? { id: existing.id }
+      : { _id: existing._id };
+    
+    await packagesCollection.updateOne(updateQuery, { $set: updated });
+    
+    // Trigger Next.js revalidation for this package
+    triggerRevalidation(updated.slug || updated.id || req.params.id);
+    
+    res.json({ success: true, data: updated, message: 'Package updated and cache cleared' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
+// Helper function to trigger Next.js ISR revalidation
+async function triggerRevalidation(slug) {
+  try {
+    const nextAppUrl = process.env.NEXT_APP_URL || 'http://localhost:3000';
+    const revalidateSecret = process.env.REVALIDATE_SECRET || 'your-secret-key';
+    
+    console.log(`🔄 Triggering revalidation for slug: ${slug}`);
+    
+    const response = await fetch(`${nextAppUrl}/api/revalidate-package`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, secret: revalidateSecret }),
+    }).catch(err => {
+      console.warn('⚠️ Could not trigger revalidation (Next.js app may be down):', err.message);
+      return null;
+    });
+    
+    if (response?.ok) {
+      console.log(`✅ Revalidation triggered for: ${slug}`);
+    }
+  } catch (error) {
+    console.warn('⚠️ Revalidation error (non-blocking):', error.message);
+  }
+}
+
 app.delete('/packages/:id', async (req, res) => {
   try {
     const packagesCollection = db.collection('packages');
-    await packagesCollection.deleteOne({ id: req.params.id });
+    
+    // Build query to find by id or _id
+    const query = { $or: [{ id: req.params.id }] };
+    if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: new ObjectId(req.params.id) });
+    }
+    
+    await packagesCollection.deleteOne(query);
     res.json({ success: true, message: 'Package deleted' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

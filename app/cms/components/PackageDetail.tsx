@@ -195,17 +195,38 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     try {
       if (!form.title.trim()) throw new Error('Title is required');
       
+      // Build payload with clean form data
       const payload = {
-        ...form,
+        title: form.title,
+        destination: form.destination,
+        duration: form.duration,
+        durationCategory: form.durationCategory,
+        rating: form.rating,
+        reviews: form.reviews,
+        price: form.price,
+        originalPrice: form.originalPrice,
+        savings: form.savings,
+        about: form.about,
         status: isDraft ? 'draft' : 'published',
-        highlights: form.highlights.filter(h => h.trim()),
-        included: form.included.filter(h => h.trim()),
-        excluded: form.excluded.filter(h => h.trim()),
+        highlights: form.highlights.filter(h => h.trim()).length > 0 
+          ? form.highlights.filter(h => h.trim()) 
+          : [''],
+        included: form.included.filter(h => h.trim()).length > 0 
+          ? form.included.filter(h => h.trim()) 
+          : [''],
+        excluded: form.excluded.filter(h => h.trim()).length > 0 
+          ? form.excluded.filter(h => h.trim()) 
+          : [''],
         faq: form.faq.filter(f => f.q.trim() && f.a.trim()),
-        itinerary: form.itinerary.filter(d => d.title.trim() && d.desc.trim())
+        itinerary: form.itinerary.filter(d => d.title.trim() && d.desc.trim()).length > 0
+          ? form.itinerary.filter(d => d.title.trim() && d.desc.trim())
+          : [{ day: 'Day 1', title: '', desc: '' }],
+        images: form.images
       };
 
-      const url = initialPackage ? `${BACKEND_URL}/packages/${initialPackage.id}` : `${BACKEND_URL}/packages`;
+      // Use id if available, otherwise use _id (MongoDB ID)
+      const packageId = initialPackage ? (initialPackage.id || initialPackage._id) : null;
+      const url = initialPackage ? `${BACKEND_URL}/packages/${packageId}` : `${BACKEND_URL}/packages`;
       const method = initialPackage ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -214,14 +235,23 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error('Failed to save package');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: isDraft ? 'Draft saved!' : (initialPackage ? 'Package updated!' : 'Package created!') });
+        const isDraftStatus = isDraft || data.data?.status === 'draft';
+        const statusText = isDraftStatus ? 'Draft' : 'Published';
+        const actionText = initialPackage ? 'updated' : 'created';
+        setMessage({ type: 'success', text: `${statusText} ${actionText}!` });
         if (onCreated) setTimeout(() => onCreated(), 1500);
+      } else {
+        throw new Error(data.error || 'Save failed');
       }
     } catch (error) {
+      console.error('Save error:', error);
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Something went wrong' });
     } finally {
       setLoading(false);
@@ -233,7 +263,8 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
 
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/packages/${initialPackage.id}`, { method: 'DELETE' });
+      const packageId = initialPackage.id || initialPackage._id;
+      const response = await fetch(`${BACKEND_URL}/packages/${packageId}`, { method: 'DELETE' });
       if (response.ok) {
         setMessage({ type: 'success', text: 'Package deleted' });
         setTimeout(() => onDeleted?.(), 1000);
@@ -266,10 +297,10 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
             View Drafts
           </Button>
 
-          {initialPackage && (
+          {initialPackage && initialPackage.status === 'published' && (
             <Button
               variant="outline"
-              onClick={() => window.open(`/packages/${initialPackage.slug || 'template'}`, '_blank')}
+              onClick={() => window.open(`/packages/${initialPackage.slug || initialPackage.id || 'template'}`, '_blank')}
               className="text-xs font-bold uppercase tracking-wider border-gray-200 h-9 px-4 rounded-xl"
             >
               <Eye className="w-3.5 h-3.5 mr-2" /> Live Post
@@ -281,11 +312,12 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
             </Button>
           )}
           <Button variant="outline" onClick={(e) => handleSubmit(e, true)} disabled={loading} className="text-xs font-bold uppercase tracking-wider border-gray-200 h-9 px-4 rounded-xl">
-            <Save className="w-3.5 h-3.5 mr-2" /> Save Draft
+            <Save className="w-3.5 h-3.5 mr-2" /> 
+            {initialPackage?.status === 'draft' ? 'Save Draft' : 'Save as Draft'}
           </Button>
           <Button onClick={(e) => handleSubmit(e, false)} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-100 px-6 h-9 rounded-xl font-bold uppercase tracking-wider text-xs">
             {loading ? <Loader className="w-3.5 h-3.5 animate-spin mr-2" /> : <Save className="w-3.5 h-3.5 mr-2" />}
-            {initialPackage ? 'Update Package' : 'Publish Package'}
+            {initialPackage?.status === 'draft' ? (initialPackage ? 'Publish Package' : 'Publish') : (initialPackage ? 'Update & Publish' : 'Publish Package')}
           </Button>
         </div>
       </div>

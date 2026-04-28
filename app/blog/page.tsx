@@ -9,9 +9,9 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbS
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
 
 export default function BlogPage() {
-  const [blogs, setBlogs] = useState([]);
+  const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -29,7 +29,7 @@ export default function BlogPage() {
         }
       } catch (err) {
         console.error('Error fetching blogs:', err);
-        setError(`Connection error: ${err.message}`);
+        setError(`Connection error: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setBlogs([]);
       } finally {
         setLoading(false);

@@ -1,11 +1,18 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "@/assets/Experience_my_India.webp";
 
 const Footer = () => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <footer className="relative py-10 md:py-14 px-6 overflow-hidden select-none bg-gradient-to-br from-white via-[#fafafa] to-[#f5f5f5]">
       {/* ── Animated Background Grid ── */}
@@ -55,7 +62,7 @@ const Footer = () => {
 
       {/* ── Golden Dust Particles ── */}
       <div className="absolute inset-0 pointer-events-none z-1">
-        {[...Array(20)].map((_, i) => (
+        {mounted && [...Array(20)].map((_, i) => (
           <div
             key={i}
             className="absolute rounded-full"
