@@ -4,27 +4,9 @@ import React, { useState, useEffect } from 'react';
 import BlogList from './BlogList';
 import BlogDetail from './BlogDetail';
 import { Loader } from 'lucide-react';
+import { Blog } from './types';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
-
-interface Blog {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  author: string;
-  date: string;
-  thumbnailImage: string;
-  content: string;
-  tags: string[];
-  quotes: string[];
-  additionalImages: string[];
-  coverImage: string;
-  authorRole: string;
-  readTime: string;
-  status?: string;
-}
 
 export default function BlogManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);

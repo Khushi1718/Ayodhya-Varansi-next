@@ -3,30 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader, Plus, RefreshCw, Search, LayoutGrid, List as ListIcon, Trash2, Edit3, Eye } from 'lucide-react';
-
-interface Blog {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  author: string;
-  date: string;
-  thumbnailImage: string;
-  status?: string;
-}
-
-interface BlogListProps {
-  blogs: Blog[];
-  selectedBlog: Blog | null;
-  onSelectBlog: (blog: Blog) => void;
-  onCreateNew: () => void;
-  onDeleteBlog?: (id: string) => void;
-  loading: boolean;
-  onRefresh: () => void;
-  fullWidth?: boolean;
-  title?: string;
-}
+import { Blog, BlogListProps } from './types';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
 

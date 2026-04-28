@@ -11,6 +11,7 @@ import {
   Compass, Share2, Link2, ArrowLeft, Type
 } from 'lucide-react';
 import 'react-quill-new/dist/quill.snow.css';
+import { Blog, BlogDetailProps } from './types';
 
 // Dynamic import for ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
@@ -19,33 +20,6 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
 });
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
-
-interface Blog {
-  id: string;
-  slug: string;
-  title: string;
-  subtitle: string;
-  category: string;
-  author: string;
-  authorRole?: string;
-  date: string;
-  thumbnailImage: string;
-  content: string;
-  tags: string[];
-  quotes: string[];
-  additionalImages: string[];
-  coverImage: string;
-  readTime?: string;
-  status?: string;
-}
-
-interface BlogDetailProps {
-  blog: Blog | null;
-  onDeleted?: () => void;
-  onCreated?: () => void;
-  onBack?: () => void;
-  onViewDrafts?: () => void;
-}
 
 export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewDrafts }: BlogDetailProps) {
   const [loading, setLoading] = useState(false);

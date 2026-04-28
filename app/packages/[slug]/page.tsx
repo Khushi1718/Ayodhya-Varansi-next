@@ -691,7 +691,7 @@ export default function PackageTemplate() {
                      
                      {/* Progress Dots */}
                      <div className="flex gap-2">
-                        {pkg.testimonials.map((_, i: number) => (
+                        {pkg.testimonials.map((_: unknown, i: number) => (
                            <button 
                              key={i}
                              onClick={() => {

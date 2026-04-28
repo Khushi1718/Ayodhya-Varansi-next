@@ -10,52 +10,9 @@ import {
   HelpCircle, Calendar, Star, Info, Share2, ThumbsUp, ChevronDown,
   Award, Shield, Phone, Mail, Sparkles, Layout, FileText
 } from 'lucide-react';
+import { Package, PackageDetailProps, ItineraryDay, FAQ } from './types';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
-
-interface ItineraryDay {
-  day: string;
-  title: string;
-  desc: string;
-}
-
-interface FAQ {
-  q: string;
-  a: string;
-}
-
-interface Package {
-  id: string;
-  slug: string;
-  title: string;
-  destination: string;
-  duration: string;
-  durationCategory: string;
-  rating: number;
-  reviews: number;
-  price: string;
-  originalPrice: string;
-  savings: string;
-  about: string;
-  highlights: string[];
-  itinerary: ItineraryDay[];
-  included: string[];
-  excluded: string[];
-  faq: FAQ[];
-  images: {
-    main: string;
-    gallery: string[];
-  };
-  status?: string;
-}
-
-interface PackageDetailProps {
-  packageData: Package | null;
-  onDeleted?: () => void;
-  onCreated?: () => void;
-  onBack?: () => void;
-  onViewDrafts?: () => void;
-}
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
   const [loading, setLoading] = useState(false);

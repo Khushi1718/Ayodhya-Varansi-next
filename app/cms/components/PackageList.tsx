@@ -3,32 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader, Plus, RefreshCw, Search, LayoutGrid, List as ListIcon, Trash2, Edit3, Eye, MapPin, Clock } from 'lucide-react';
-
-interface Package {
-  id: string;
-  slug: string;
-  title: string;
-  destination: string;
-  duration: string;
-  price: string;
-  rating: number;
-  status?: string;
-  images: {
-    main: string;
-  };
-}
-
-interface PackageListProps {
-  packages: Package[];
-  selectedPackage: Package | null;
-  onSelectPackage: (pkg: Package) => void;
-  onCreateNew: () => void;
-  onDeletePackage?: (id: string) => void;
-  loading: boolean;
-  onRefresh: () => void;
-  fullWidth?: boolean;
-  title?: string;
-}
+import { Package, PackageListProps } from './types';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
 

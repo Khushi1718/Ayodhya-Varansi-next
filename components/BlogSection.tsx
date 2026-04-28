@@ -46,7 +46,7 @@ const ArticleCard = ({ post, isMain = false }: { post: any, isMain?: boolean }) 
 }
 
 const BlogSection = () => {
-  const [blogs, setBlogs] = useState([]);
+  const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import PackageList from './PackageList';
 import PackageDetail from './PackageDetail';
 import { Loader } from 'lucide-react';
+import { Package } from './types';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
 
 export default function PackageManager() {
-  const [packages, setPackages] = useState<any[]>([]);
-  const [selectedPackage, setSelectedPackage] = useState<any | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isViewingDrafts, setIsViewingDrafts] = useState(false);
