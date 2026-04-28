@@ -11,7 +11,7 @@ interface CustomisedPackageModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalProps) => {
   const [formData, setFormData] = useState({
@@ -30,7 +30,7 @@ const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalPr
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/custom-packages`, {
+      const response = await fetch(`${API_BASE}/custom-packages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

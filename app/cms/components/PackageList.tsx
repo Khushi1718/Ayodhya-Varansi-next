@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader, Plus, RefreshCw, Search, LayoutGrid, List as ListIcon, Trash2, Edit3, Eye, MapPin, Clock } from 'lucide-react';
 import { Package, PackageListProps } from './types';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function PackageList({
   packages,
@@ -26,7 +26,7 @@ export default function PackageList({
     if (!confirm('Are you sure you want to delete this package?')) return;
     
     try {
-      const response = await fetch(`${BACKEND_URL}/packages/${id}`, {
+      const response = await fetch(`${API_BASE}/packages/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
 // Helper function to revalidate paths
 async function revalidatePath(path: string) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    if (!baseUrl) return;
     const response = await fetch(`${baseUrl}/api/revalidate?path=${encodeURIComponent(path)}`, {
       method: 'GET',
       headers: {

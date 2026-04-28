@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function DashboardOverview({ onNavigate }: { onNavigate: (page: string) => void }) {
   const [stats, setStats] = useState({
@@ -29,9 +29,9 @@ export default function DashboardOverview({ onNavigate }: { onNavigate: (page: s
     const fetchData = async () => {
       try {
         const [blogsRes, enquiriesRes, packagesRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/admin/blogs`),
-          fetch(`${BACKEND_URL}/enquiries`),
-          fetch(`${BACKEND_URL}/custom-packages`)
+          fetch(`${API_BASE}/admin/blogs`),
+          fetch(`${API_BASE}/enquiries`),
+          fetch(`${API_BASE}/custom-packages`)
         ]);
 
         const blogsData = await blogsRes.json();

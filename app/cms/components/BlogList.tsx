@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader, Plus, RefreshCw, Search, LayoutGrid, List as ListIcon, Trash2, Edit3, Eye } from 'lucide-react';
 import { Blog, BlogListProps } from './types';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function BlogList({
   blogs,
@@ -26,7 +26,7 @@ export default function BlogList({
     if (!confirm('Are you sure you want to delete this story?')) return;
     
     try {
-      const response = await fetch(`${BACKEND_URL}/blogs/${id}`, {
+      const response = await fetch(`${API_BASE}/blogs/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

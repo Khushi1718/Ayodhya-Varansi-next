@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight, Loader } from "lucide-react";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -18,7 +18,7 @@ export default function BlogPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`${BACKEND_URL}/blogs`);
+        const response = await fetch(`${API_BASE}/blogs`);
         const data = await response.json();
 
         if (data.success && data.data) {

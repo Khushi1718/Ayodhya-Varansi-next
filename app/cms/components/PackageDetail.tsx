@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Package, PackageDetailProps, ItineraryDay, FAQ } from './types';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
   const [loading, setLoading] = useState(false);
@@ -183,7 +183,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
 
       // Use id if available, otherwise use _id (MongoDB ID)
       const packageId = initialPackage ? (initialPackage.id || initialPackage._id) : null;
-      const url = initialPackage ? `${BACKEND_URL}/packages/${packageId}` : `${BACKEND_URL}/packages`;
+      const url = initialPackage ? `${API_BASE}/packages/${packageId}` : `${API_BASE}/packages`;
       const method = initialPackage ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -221,7 +221,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     try {
       setLoading(true);
       const packageId = initialPackage.id || initialPackage._id;
-      const response = await fetch(`${BACKEND_URL}/packages/${packageId}`, { method: 'DELETE' });
+      const response = await fetch(`${API_BASE}/packages/${packageId}`, { method: 'DELETE' });
       if (response.ok) {
         setMessage({ type: 'success', text: 'Package deleted' });
         setTimeout(() => onDeleted?.(), 1000);

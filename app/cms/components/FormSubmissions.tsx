@@ -18,7 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 interface Submission {
   id: string;
@@ -51,7 +51,7 @@ export default function FormSubmissions({ type }: { type: 'enquiries' | 'custom-
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/${endpoint}`);
+      const response = await fetch(`${API_BASE}/${endpoint}`);
       const data = await response.json();
       if (data.success) {
         setSubmissions(data.data);
@@ -68,7 +68,7 @@ export default function FormSubmissions({ type }: { type: 'enquiries' | 'custom-
     if (!confirm('Are you sure you want to delete this submission?')) return;
     
     try {
-      const response = await fetch(`${BACKEND_URL}/${endpoint}/${id}`, {
+      const response = await fetch(`${API_BASE}/${endpoint}/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {

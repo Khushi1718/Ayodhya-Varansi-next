@@ -6,7 +6,7 @@ import BlogDetail from './BlogDetail';
 import { Loader } from 'lucide-react';
 import { Blog } from './types';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function BlogManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -24,7 +24,7 @@ export default function BlogManager() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/admin/blogs`);
+      const response = await fetch(`${API_BASE}/admin/blogs`);
       const data = await response.json();
 
       if (data.success) {

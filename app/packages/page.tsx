@@ -97,8 +97,8 @@ const Packages = () => {
 
   const fetchPackages = async () => {
     try {
-      const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
-      const response = await fetch(`${BACKEND_URL}/packages`);
+      const API_BASE = "/api";
+      const response = await fetch(`${API_BASE}/packages`);
       const data = await response.json();
       
       if (data.success && data.data.length > 0) {

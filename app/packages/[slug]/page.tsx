@@ -20,7 +20,7 @@ import subImg2 from "@/assets/Cyberian birds on prayagraj.jpg";
 import subImg3 from "@/assets/ -8.jpg";
 import subImg4 from "@/assets/ -11.jpg";
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 // DUMMY DATA FOR TEMPLATE
 const dummyPackage = {
@@ -177,7 +177,7 @@ export default function PackageTemplate() {
 
   const fetchPackage = async (slug: string) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/packages/${slug}`, {
+      const response = await fetch(`${API_BASE}/packages/${slug}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',

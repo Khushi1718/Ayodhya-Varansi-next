@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import customTravelBg from "@/assets/premium-custom-resort.png";
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 const CustomisedPackageSection = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +28,7 @@ const CustomisedPackageSection = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/custom-packages`, {
+      const response = await fetch(`${API_BASE}/custom-packages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

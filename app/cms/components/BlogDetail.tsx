@@ -19,7 +19,7 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
   loading: () => <div className="h-[400px] w-full bg-gray-50 animate-pulse rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Editor...</div>
 });
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewDrafts }: BlogDetailProps) {
   const [loading, setLoading] = useState(false);
@@ -121,7 +121,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
         status: isDraft ? 'draft' : 'published'
       };
 
-      const url = blog ? `${BACKEND_URL}/blogs/${blog.id}` : `${BACKEND_URL}/blogs`;
+      const url = blog ? `${API_BASE}/blogs/${blog.id}` : `${API_BASE}/blogs`;
       const method = blog ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -163,7 +163,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
 
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/blogs/${blog.id}`, {
+      const response = await fetch(`${API_BASE}/blogs/${blog.id}`, {
         method: 'DELETE',
       });
 

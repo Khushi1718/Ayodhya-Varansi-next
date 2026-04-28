@@ -10,7 +10,7 @@ interface EnquireNowModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 const EnquireNowModal = ({ open, onOpenChange }: EnquireNowModalProps) => {
   const [formData, setFormData] = useState({
@@ -28,7 +28,7 @@ const EnquireNowModal = ({ open, onOpenChange }: EnquireNowModalProps) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/enquiries`, {
+      const response = await fetch(`${API_BASE}/enquiries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

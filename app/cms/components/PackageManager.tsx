@@ -6,7 +6,7 @@ import PackageDetail from './PackageDetail';
 import { Loader } from 'lucide-react';
 import { Package } from './types';
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 export default function PackageManager() {
   const [packages, setPackages] = useState<Package[]>([]);
@@ -22,7 +22,7 @@ export default function PackageManager() {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BACKEND_URL}/admin/packages`);
+      const response = await fetch(`${API_BASE}/admin/packages`);
       const data = await response.json();
       if (data.success) {
         setPackages(data.data);

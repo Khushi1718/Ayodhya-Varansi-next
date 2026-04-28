@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Loader } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
+const API_BASE = "/api";
 
 const ArticleCard = ({ post }: { post: any }) => {
   return (
@@ -55,7 +55,7 @@ const BlogSection = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`${BACKEND_URL}/blogs`);
+        const response = await fetch(`${API_BASE}/blogs`);
         const data = await response.json();
 
         if (data.success && data.data) {
