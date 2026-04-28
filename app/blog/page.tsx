@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ArrowRight, Loader } from "lucide-react";
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
 
 const API_BASE = "/api";
 
@@ -45,31 +44,15 @@ export default function BlogPage() {
   const featuredPost = blogs[0] || null;
   const otherPosts = blogs.slice(1);
   return (
-    <main className="min-h-screen bg-[#fafaf8] pt-28 pb-20">
+    <main className="min-h-screen bg-[#fafaf8] pt-24 pb-20">
       <div className="max-w-[1300px] mx-auto px-6 md:px-10">
-        
-        <div className="mb-12 md:mb-16">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem><BreadcrumbPage>The Journal</BreadcrumbPage></BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          
-          <div className="mt-8 text-center max-w-2xl mx-auto">
-            <h1 className="font-heading text-3xl md:text-5xl font-bold text-gray-900 leading-tight">
-              The Journal
-            </h1>
-            <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-              Travel stories, expert guides, and inspiration for your next divine journey. Curated by the people who know India best.
-            </p>
-            <div className="w-12 h-0.5 bg-primary rounded-full mx-auto mt-5" />
-          </div>
+        <div className="py-14 md:py-16 text-center max-w-4xl mx-auto">
+          <h1 className="font-heading text-[64px] md:text-[90px] font-bold text-[#111b34] leading-[1.03] tracking-tight">
+            The Journal
+          </h1>
+          <p className="mt-6 text-[#2f3747] text-[18px] md:text-[20px] leading-[1.45] max-w-[980px] mx-auto">
+            Travel stories, expert guides, and inspiration for your next divine journey. Curated by the people who know India best.
+          </p>
         </div>
 
         {/* Loading State */}
@@ -91,8 +74,8 @@ export default function BlogPage() {
         {/* FEATURED POST */}
         {!loading && !error && featuredPost && (
           <div className="mb-16 md:mb-24">
-            <Link href={`/blog/${featuredPost.slug}`} className="group cursor-pointer grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-2xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-gray-100 transition-shadow hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] block">
-              <div className="relative aspect-square lg:aspect-auto lg:h-full overflow-hidden bg-gray-200">
+            <Link href={`/blog/${featuredPost.slug}`} className="group cursor-pointer grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-[28px] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-gray-100 transition-shadow hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] block">
+              <div className="relative aspect-[4/5] lg:aspect-auto lg:h-full overflow-hidden bg-gray-200">
                 {featuredPost.thumbnailImage ? (
                   <img 
                     src={featuredPost.thumbnailImage} 
@@ -103,20 +86,20 @@ export default function BlogPage() {
                   <div className="w-full h-full bg-gray-300" />
                 )}
               </div>
-              <div className="p-10 md:p-16 flex flex-col justify-center">
+              <div className="p-10 md:p-14 flex flex-col justify-center bg-[#f7f7fa]">
                 <div className="flex items-center gap-4 mb-6">
                   <span className="text-[10px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase">
-                    {featuredPost.category || "Featured"}
+                    Featured Story
                   </span>
                   <span className="w-8 h-px bg-gray-200"></span>
                   <span className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
-                    {new Date(featuredPost.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {featuredPost.readTime || "5 min read"}
                   </span>
                 </div>
-                <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-[1.15] group-hover:text-[hsl(var(--primary))] transition-colors">
+                <h2 className="font-heading text-[56px] md:text-[86px] font-bold text-[hsl(var(--primary))] mb-6 leading-[1.03] transition-colors">
                   {featuredPost.title}
                 </h2>
-                <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
+                <p className="text-[#56627a] text-[18px] md:text-[22px] leading-[1.55] mb-8">
                   {featuredPost.preview || featuredPost.subtitle}
                 </p>
                 <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-6">
@@ -124,7 +107,6 @@ export default function BlogPage() {
                     <span className="text-[10px] font-semibold text-gray-400 tracking-[0.15em] uppercase mb-1">
                       BY {featuredPost.author}
                     </span>
-                    <span className="text-xs text-gray-900 font-medium">{new Date(featuredPost.date).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-2 group-hover:translate-x-1 transition-transform">
                     <span className="text-[11px] font-bold text-[hsl(var(--primary))] uppercase tracking-wider">
@@ -144,7 +126,7 @@ export default function BlogPage() {
         {!loading && !error && (
           <div className="mb-10">
             <div className="flex items-center justify-between mb-10 border-b border-gray-200 pb-4">
-              <h3 className="font-heading text-2xl font-bold text-gray-900">
+              <h3 className="font-heading text-[56px] font-bold text-[#111b34] leading-none">
                 {blogs.length > 1 ? 'Latest Stories' : 'Blog Posts'}
               </h3>
               <span className="text-sm text-gray-500">
@@ -171,10 +153,10 @@ export default function BlogPage() {
                       <span className="text-[9px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase mb-2">
                         {post.category || "Travel"}
                       </span>
-                      <h4 className="font-heading font-bold text-base lg:text-lg text-gray-900 mb-2 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-2">
+                      <h4 className="font-heading font-bold text-[24px] text-[#111b34] mb-3 leading-[1.18] group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-2">
                         {post.title}
                       </h4>
-                      <p className="text-gray-500 font-normal leading-relaxed text-sm mb-4 line-clamp-2">
+                      <p className="text-[#646f85] font-normal leading-relaxed text-[16px] mb-5 line-clamp-3">
                         {post.preview || post.subtitle}
                       </p>
                       <div className="mt-auto pt-3 border-t border-gray-100 transition-colors flex items-center justify-between">
