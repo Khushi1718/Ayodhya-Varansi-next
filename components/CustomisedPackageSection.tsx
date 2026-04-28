@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import customTravelBg from "@/assets/premium-custom-resort.png";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 const CustomisedPackageSection = () => {
   const [formData, setFormData] = useState({

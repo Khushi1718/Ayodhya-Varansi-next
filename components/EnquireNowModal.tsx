@@ -10,7 +10,7 @@ interface EnquireNowModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 const EnquireNowModal = ({ open, onOpenChange }: EnquireNowModalProps) => {
   const [formData, setFormData] = useState({

@@ -18,7 +18,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 interface Submission {
   id: string;

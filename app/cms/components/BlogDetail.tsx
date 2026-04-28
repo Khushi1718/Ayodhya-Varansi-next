@@ -19,7 +19,7 @@ const ReactQuill = dynamic(() => import('react-quill-new'), {
   loading: () => <div className="h-[400px] w-full bg-gray-50 animate-pulse rounded-2xl border border-gray-100 flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Editor...</div>
 });
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewDrafts }: BlogDetailProps) {
   const [loading, setLoading] = useState(false);

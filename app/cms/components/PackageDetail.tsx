@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Package, PackageDetailProps, ItineraryDay, FAQ } from './types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
   const [loading, setLoading] = useState(false);

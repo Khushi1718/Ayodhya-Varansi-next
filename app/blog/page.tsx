@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { ArrowRight, Loader } from "lucide-react";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -153,10 +153,10 @@ export default function BlogPage() {
             </div>
 
             {otherPosts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {otherPosts.map((post) => (
                   <Link href={`/blog/${post.slug}`} key={post.id} className="flex flex-col group cursor-pointer h-full block">
-                    <div className="relative w-full aspect-[4/3] overflow-hidden mb-5 bg-[#f4f2ee] rounded-xl">
+                    <div className="relative w-full aspect-[4/3] overflow-hidden mb-4 bg-[#f4f2ee] rounded-xl">
                       {post.thumbnailImage ? (
                         <img
                           src={post.thumbnailImage}
@@ -168,16 +168,16 @@ export default function BlogPage() {
                       )}
                     </div>
                     <div className="flex flex-col flex-1">
-                      <span className="text-[9px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase mb-3">
+                      <span className="text-[9px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase mb-2">
                         {post.category || "Travel"}
                       </span>
-                      <h4 className="font-heading font-bold text-lg md:text-xl text-gray-900 mb-3 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-2">
+                      <h4 className="font-heading font-bold text-base lg:text-lg text-gray-900 mb-2 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors line-clamp-2">
                         {post.title}
                       </h4>
-                      <p className="text-gray-500 font-normal leading-relaxed text-[13px] mb-5 line-clamp-2">
+                      <p className="text-gray-500 font-normal leading-relaxed text-sm mb-4 line-clamp-2">
                         {post.preview || post.subtitle}
                       </p>
-                      <div className="mt-auto pt-4 border-t border-gray-100 transition-colors flex items-center justify-between">
+                      <div className="mt-auto pt-3 border-t border-gray-100 transition-colors flex items-center justify-between">
                         <span className="text-[9px] font-semibold text-gray-400 tracking-[0.15em] uppercase line-clamp-1">
                           BY {post.author}
                         </span>

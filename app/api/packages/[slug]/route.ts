@@ -1,52 +1,57 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
+import { getDb } from "@/lib/db";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
-
-export const revalidate = 0; // No caching - always revalidate
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
-    
-    // Fetch from backend without caching
-    const response = await fetch(
-      `${BACKEND_URL}/packages/${slug}`,
-      {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-        },
-        // Use 'no-store' to ensure no caching at all
-        cache: 'no-store',
-      }
-    );
+    const query: { $or: Array<Record<string, unknown>> } = { $or: [{ id: slug }, { slug }] };
+    if (/^[0-9a-fA-F]{24}$/.test(slug)) query.$or.push({ _id: new ObjectId(slug) });
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch package' },
-        { status: response.status }
-      );
-    }
+    const db = await getDb();
+    const pkg = await db.collection("packages").findOne(query);
+    if (!pkg) return NextResponse.json({ success: false, error: "Package not found" }, { status: 404 });
 
-    const data = await response.json();
-
-    // Return with no-cache headers
-    const headers = new Headers({
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-      'Pragma': 'no-cache',
-      'Expires': '0',
-    });
-
-    return NextResponse.json(data, { headers });
+    return NextResponse.json({ success: true, data: pkg });
   } catch (error) {
-    console.error('API route error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to fetch package" }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request, { params }: { params: Promise<{ slug: string }> }) {
+  try {
+    const { slug } = await params;
+    const db = await getDb();
+    const query: { $or: Array<Record<string, unknown>> } = { $or: [{ id: slug }] };
+    if (/^[0-9a-fA-F]{24}$/.test(slug)) query.$or.push({ _id: new ObjectId(slug) });
+
+    const existing = await db.collection("packages").findOne(query);
+    if (!existing) return NextResponse.json({ success: false, error: "Package not found" }, { status: 404 });
+
+    const body = await request.json();
+    const { _id, createdAt, ...updateData } = body;
+    const updated = { ...existing, ...updateData, updatedAt: new Date().toISOString() };
+    delete (updated as Record<string, unknown>)._id;
+
+    const updateQuery = existing.id ? { id: existing.id } : { _id: existing._id };
+    await db.collection("packages").updateOne(updateQuery, { $set: updated });
+
+    return NextResponse.json({ success: true, data: updated, message: "Package updated successfully" });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to update package" }, { status: 500 });
+  }
+}
+
+export async function DELETE(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
+  try {
+    const { slug } = await params;
+    const query: { $or: Array<Record<string, unknown>> } = { $or: [{ id: slug }] };
+    if (/^[0-9a-fA-F]{24}$/.test(slug)) query.$or.push({ _id: new ObjectId(slug) });
+
+    const db = await getDb();
+    await db.collection("packages").deleteOne(query);
+    return NextResponse.json({ success: true, message: "Package deleted" });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to delete package" }, { status: 500 });
   }
 }

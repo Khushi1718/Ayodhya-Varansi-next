@@ -5,12 +5,12 @@ import Link from "next/link";
 import { ArrowRight, Loader } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
-const ArticleCard = ({ post, isMain = false }: { post: any, isMain?: boolean }) => {
+const ArticleCard = ({ post }: { post: any }) => {
   return (
     <Link href={`/blog/${post.slug}`} className="flex flex-col group cursor-pointer h-full">
-      <div className={`relative w-full overflow-hidden mb-3.5 bg-[#f4f2ee] ${isMain ? 'aspect-[4/5]' : 'aspect-[4/3]'} rounded-xl`}>
+      <div className="relative w-full overflow-hidden mb-4 bg-[#f4f2ee] aspect-[4/3] rounded-xl">
         {post.thumbnailImage || post.image ? (
           <img
             src={post.thumbnailImage || post.image}
@@ -26,10 +26,10 @@ const ArticleCard = ({ post, isMain = false }: { post: any, isMain?: boolean }) 
         <span className="text-[9px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase mb-2">
           {post.category || "Travel"}
         </span>
-        <h3 className={`font-heading font-bold text-gray-900 mb-2 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors ${isMain ? 'text-2xl lg:text-[28px]' : 'text-[15px] lg:text-base'}`}>
+        <h3 className="font-heading font-bold text-gray-900 mb-2 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors text-base lg:text-lg">
           {post.title}
         </h3>
-        <p className={`text-gray-500 font-normal leading-relaxed mb-4 ${isMain ? 'text-sm lg:text-[15px]' : 'text-xs lg:text-[13px]'}`}>
+        <p className="text-gray-500 font-normal leading-relaxed mb-4 text-sm lg:text-[15px]">
           {post.preview}
         </p>
         <div className="mt-auto pt-1 flex justify-between items-center border-t border-gray-100/50 pt-3">
@@ -76,9 +76,6 @@ const BlogSection = () => {
     fetchBlogs();
   }, []);
 
-  const featuredPost = blogs[0];
-  const otherPosts = blogs.slice(1);
-
   return (
     <section id="blog" className="py-16 md:py-24 bg-[#fcfbf9] border-t border-gray-100">
       <div className="max-w-[1140px] mx-auto px-6 md:px-8">
@@ -108,74 +105,59 @@ const BlogSection = () => {
           </div>
         )}
 
-        {/* FEATURED POST + GRID */}
+        {/* ASYMMETRICAL GRID LAYOUT - 5 BLOGS */}
         {!loading && !error && blogs.length > 0 && (
-          <div>
-            {/* FEATURED POST */}
-            {featuredPost && (
-              <div className="mb-16 md:mb-20">
-                <Link href={`/blog/${featuredPost.slug}`} className="group cursor-pointer grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-2xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-gray-100 transition-shadow hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] block">
-                  <div className="relative aspect-square lg:aspect-auto lg:h-full overflow-hidden bg-gray-200">
-                    {featuredPost.thumbnailImage ? (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+            {/* LEFT COLUMN - 2 SMALL CARDS */}
+            <div className="col-span-1 md:col-span-3 flex flex-col gap-8">
+              {blogs[0] && <ArticleCard post={blogs[0]} />}
+              {blogs[1] && <ArticleCard post={blogs[1]} />}
+            </div>
+
+            {/* CENTER COLUMN - 1 LARGE FEATURED CARD */}
+            <div className="col-span-1 md:col-span-6">
+              {blogs[2] && (
+                <Link href={`/blog/${blogs[2].slug}`} className="flex flex-col group cursor-pointer h-full">
+                  <div className="relative w-full overflow-hidden mb-4 bg-[#f4f2ee] aspect-square rounded-xl">
+                    {blogs[2].thumbnailImage || blogs[2].image ? (
                       <img
-                        src={featuredPost.thumbnailImage}
-                        alt={featuredPost.title}
+                        src={blogs[2].thumbnailImage || blogs[2].image}
+                        alt={blogs[2].title}
                         className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400" />
                     )}
+                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                   </div>
-                  <div className="p-10 md:p-16 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-6">
-                      <span className="text-[10px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase">
-                        {featuredPost.category || "Featured"}
-                      </span>
-                      <span className="w-8 h-px bg-gray-200"></span>
-                      <span className="text-[10px] font-semibold text-gray-400 tracking-[0.1em] uppercase">
-                        {new Date(featuredPost.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                    <h2 className="font-heading text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-[1.15] group-hover:text-[hsl(var(--primary))] transition-colors">
-                      {featuredPost.title}
-                    </h2>
-                    <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
-                      {featuredPost.preview || featuredPost.subtitle}
+                  <div className="flex flex-col flex-1">
+                    <span className="text-[9px] font-bold text-[hsl(var(--primary))] tracking-[0.2em] uppercase mb-2">
+                      {blogs[2].category || "Travel"}
+                    </span>
+                    <h3 className="font-heading font-bold text-gray-900 mb-2 leading-tight group-hover:text-[hsl(var(--primary))] transition-colors text-lg lg:text-xl">
+                      {blogs[2].title}
+                    </h3>
+                    <p className="text-gray-500 font-normal leading-relaxed mb-4 text-sm lg:text-base">
+                      {blogs[2].preview}
                     </p>
-                    <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-6">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-semibold text-gray-400 tracking-[0.15em] uppercase mb-1">
-                          BY {featuredPost.author}
-                        </span>
-                        <span className="text-xs text-gray-900 font-medium">{new Date(featuredPost.date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2 group-hover:translate-x-1 transition-transform">
-                        <span className="text-[11px] font-bold text-[hsl(var(--primary))] uppercase tracking-wider">
-                          Read Full Story
-                        </span>
-                        <div className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center group-hover:border-[hsl(var(--primary))] group-hover:bg-[hsl(var(--primary))] group-hover:text-white transition-all text-gray-900">
-                          <ArrowRight size={16} />
-                        </div>
-                      </div>
+                    <div className="mt-auto pt-3 flex justify-between items-center border-t border-gray-100/50">
+                      <span className="text-[9px] font-semibold text-gray-400 tracking-[0.15em] uppercase">
+                        {blogs[2].author}
+                      </span>
+                      <span className="text-[11px] font-bold text-gray-400 group-hover:text-[hsl(var(--primary))] flex items-center gap-1 transition-colors uppercase tracking-[0.1em]">
+                        Read Full <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </span>
                     </div>
                   </div>
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* GRID OF OTHER BLOGS */}
-            {otherPosts.length > 0 && (
-              <div>
-                <h3 className="font-heading text-2xl font-bold text-gray-900 mb-10 border-b border-gray-200 pb-5">
-                  Latest Stories
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-                  {otherPosts.map((post, i) => (
-                    <ArticleCard key={i} post={post} />
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* RIGHT COLUMN - 2 SMALL CARDS */}
+            <div className="col-span-1 md:col-span-3 flex flex-col gap-8">
+              {blogs[3] && <ArticleCard post={blogs[3]} />}
+              {blogs[4] && <ArticleCard post={blogs[4]} />}
+            </div>
           </div>
         )}
 

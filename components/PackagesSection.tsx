@@ -186,7 +186,7 @@ const PackagesSection = () => {
   useEffect(() => {
     const fetchPackagesData = async () => {
       try {
-        const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+        const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
         const response = await fetch(`${BACKEND_URL}/packages`, {
           cache: 'no-store',
           headers: { 'Cache-Control': 'no-cache' }

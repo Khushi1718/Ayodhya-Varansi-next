@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader, Plus, RefreshCw, Search, LayoutGrid, List as ListIcon, Trash2, Edit3, Eye } from 'lucide-react';
 import { Blog, BlogListProps } from './types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function BlogList({
   blogs,

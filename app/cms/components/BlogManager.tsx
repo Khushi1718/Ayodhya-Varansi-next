@@ -6,7 +6,7 @@ import BlogDetail from './BlogDetail';
 import { Loader } from 'lucide-react';
 import { Blog } from './types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function BlogManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);

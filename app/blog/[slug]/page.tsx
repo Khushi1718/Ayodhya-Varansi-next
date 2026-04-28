@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 const EnquireNowModal = dynamic(() => import("@/components/EnquireNowModal"), { ssr: false });
 const CustomisedPackageModal = dynamic(() => import("@/components/CustomisedPackageModal"), { ssr: false });
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function BlogTemplate() {
   const params = useParams();

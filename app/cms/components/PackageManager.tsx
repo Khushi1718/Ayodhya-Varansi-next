@@ -6,7 +6,7 @@ import PackageDetail from './PackageDetail';
 import { Loader } from 'lucide-react';
 import { Package } from './types';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:17182';
+const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL || '') + '/api';
 
 export default function PackageManager() {
   const [packages, setPackages] = useState<Package[]>([]);
