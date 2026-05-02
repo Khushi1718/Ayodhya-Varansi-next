@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import 'react-quill-new/dist/quill.snow.css';
 import { Blog, BlogDetailProps } from './types';
+import { uploadImageToCloudinary } from '@/lib/cloudinaryUpload';
 
 // Dynamic import for ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
@@ -23,6 +24,7 @@ const API_BASE = "/api";
 
 export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewDrafts }: BlogDetailProps) {
   const [loading, setLoading] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   
@@ -74,23 +76,31 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
     setForm(prev => ({ ...prev, content }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'thumbnailImage' | 'coverImage' | 'additionalImages') => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'thumbnailImage' | 'coverImage' | 'additionalImages') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
+    try {
+      setUploadingField(field);
+      const uploadedUrl = await uploadImageToCloudinary(file, field === 'additionalImages' ? 'blogs/additional' : 'blogs');
+
       if (field === 'additionalImages') {
         setForm(prev => ({
           ...prev,
-          additionalImages: prev.additionalImages ? `${prev.additionalImages}\n${base64String}` : base64String
+          additionalImages: prev.additionalImages ? `${prev.additionalImages}\n${uploadedUrl}` : uploadedUrl
         }));
       } else {
-        setForm(prev => ({ ...prev, [field]: base64String }));
+        setForm(prev => ({ ...prev, [field]: uploadedUrl }));
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Image upload failed'
+      });
+    } finally {
+      setUploadingField(null);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
@@ -407,9 +417,10 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                       type="button" 
                       variant="outline" 
                       onClick={() => thumbnailInputRef.current?.click()}
+                      disabled={uploadingField === 'thumbnailImage'}
                       className="h-12 w-12 p-0 rounded-2xl border-gray-100 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-500 transition-all shadow-sm"
                     >
-                      <Upload className="w-4 h-4" />
+                      {uploadingField === 'thumbnailImage' ? '...' : <Upload className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
@@ -492,9 +503,10 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                       type="button" 
                       variant="outline" 
                       onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingField === 'coverImage'}
                       className="h-12 w-12 p-0 rounded-2xl border-gray-100 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-500 transition-all shadow-sm"
                     >
-                      <Upload className="w-4 h-4" />
+                      {uploadingField === 'coverImage' ? '...' : <Upload className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
@@ -562,25 +574,26 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                         type="button" 
                         variant="outline" 
                         onClick={() => galleryInputRef.current?.click()}
+                        disabled={uploadingField === 'additionalImages'}
                         className="flex-1 px-4 rounded-2xl border-gray-100 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-500 transition-all shadow-sm"
                       >
-                        <Upload className="w-4 h-4" />
+                        {uploadingField === 'additionalImages' ? '...' : <Upload className="w-4 h-4" />}
                       </Button>
                     </div>
                   </div>
                 </div>
+
+                <div className="md:col-span-2">
+                  <Button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full h-16 bg-black hover:bg-gray-900 text-white rounded-3xl text-lg font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 transition-all hover:-translate-y-1 active:scale-[0.98]"
+                  >
+                    {loading ? 'Processing...' : blog ? 'Update Story' : 'Publish Story'}
+                  </Button>
+                </div>
               </div>
             </section>
-
-            <div className="pt-12 flex justify-center pb-20">
-              <Button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full max-lg h-16 bg-black hover:bg-gray-900 text-white rounded-3xl text-lg font-bold uppercase tracking-widest shadow-2xl shadow-gray-200 transition-all hover:-translate-y-1 active:scale-[0.98]"
-              >
-                {loading ? 'Processing...' : blog ? 'Update Story' : 'Publish Story'}
-              </Button>
-            </div>
           </form>
 
           {/* PREVIEWS SECTION */}
@@ -755,8 +768,8 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
 
                     {form.tags && (
                       <div className="flex flex-wrap justify-center gap-4 mt-24 pt-12 border-t border-gray-100">
-                        {form.tags.split(',').map(tag => (
-                          <span key={tag} className="px-8 py-3 bg-white border border-gray-200 rounded-full text-[11px] font-bold text-gray-500 uppercase tracking-[0.3em] hover:border-orange-500 hover:text-orange-500 transition-all shadow-sm">
+                        {form.tags.split(',').map((tag, index) => (
+                          <span key={`${tag}-${index}`} className="px-8 py-3 bg-white border border-gray-200 rounded-full text-[11px] font-bold text-gray-500 uppercase tracking-[0.3em] hover:border-orange-500 hover:text-orange-500 transition-all shadow-sm">
                             {tag.trim()}
                           </span>
                         ))}
@@ -794,7 +807,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
         </div>
       )}
 
-      <style jsx global>{`
+      <style>{`
         .quill-wrapper .ql-toolbar.ql-snow {
           border: none;
           background: #fff;

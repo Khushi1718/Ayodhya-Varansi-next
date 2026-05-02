@@ -11,11 +11,13 @@ import {
   Award, Shield, Phone, Mail, Sparkles, Layout, FileText
 } from 'lucide-react';
 import { Package, PackageDetailProps, ItineraryDay, FAQ } from './types';
+import { uploadImageToCloudinary } from '@/lib/cloudinaryUpload';
 
 const API_BASE = "/api";
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
   const [loading, setLoading] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
   const [previewTab, setPreviewTab] = useState<'page' | 'card'>('page');
@@ -126,22 +128,31 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     setForm(prev => ({ ...prev, faq: newFAQ.length ? newFAQ : [{ q: '', a: '' }] }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'main' | number) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'main' | number) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
+    try {
+      const uploadKey = field === 'main' ? 'main' : `gallery-${field}`;
+      setUploadingField(uploadKey);
+      const uploadedUrl = await uploadImageToCloudinary(file, field === 'main' ? 'packages/main' : 'packages/gallery');
+
       if (field === 'main') {
-        setForm(prev => ({ ...prev, images: { ...prev.images, main: base64String } }));
+        setForm(prev => ({ ...prev, images: { ...prev.images, main: uploadedUrl } }));
       } else {
         const newGallery = [...form.images.gallery];
-        newGallery[field] = base64String;
+        newGallery[field] = uploadedUrl;
         setForm(prev => ({ ...prev, images: { ...prev.images, gallery: newGallery } }));
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Image upload failed'
+      });
+    } finally {
+      setUploadingField(null);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent, isDraft = false) => {
@@ -377,9 +388,10 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                       type="button" 
                       variant="outline" 
                       onClick={() => mainImageInputRef.current?.click()}
+                      disabled={uploadingField === 'main'}
                       className="h-12 w-12 p-0 rounded-2xl border-gray-100 hover:bg-orange-50 transition-all"
                     >
-                      <Upload className="w-4 h-4" />
+                      {uploadingField === 'main' ? '...' : <Upload className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
@@ -514,6 +526,9 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                         <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 hover:border-orange-200 transition-all cursor-pointer flex items-center justify-center">
                           {img ? <img src={img} className="w-full h-full object-cover" alt="" /> : <Upload className="w-5 h-5 text-gray-300" />}
                           <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={(e) => handleFileUpload(e, idx)} />
+                          {uploadingField === `gallery-${idx}` && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-[10px] font-bold uppercase tracking-widest text-orange-600">Uploading</div>
+                          )}
                         </div>
                       ))}
                    </div>

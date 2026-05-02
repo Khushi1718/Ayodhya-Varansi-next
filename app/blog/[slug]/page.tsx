@@ -261,8 +261,8 @@ export default function BlogTemplate() {
             {/* TAGS */}
             {blog.tags && blog.tags.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-16">
-                {blog.tags.map((tag: string) => (
-                  <span key={tag} className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] transition-all cursor-pointer shadow-sm active:scale-95">
+                {blog.tags.map((tag: string, index: number) => (
+                  <span key={`${tag}-${index}`} className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] hover:border-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] transition-all cursor-pointer shadow-sm active:scale-95">
                     {tag}
                   </span>
                 ))}

@@ -121,10 +121,10 @@ export default function BlogList({
         {!loading && filteredBlogs.length > 0 && viewMode === 'grid' && (
           <div className={fullWidth ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-4"}>
             {filteredBlogs.map((blog) => (
-              <button
+              <div
                 key={blog.id}
                 onClick={() => onSelectBlog(blog)}
-                className={`text-left transition-all relative group ${
+                className={`text-left cursor-pointer transition-all relative group ${
                   fullWidth 
                     ? 'bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-100 hover:-translate-y-1' 
                     : `w-full p-4 rounded-2xl border ${selectedBlog?.id === blog.id ? 'bg-orange-50 border-orange-200' : 'bg-white border-transparent hover:bg-gray-50'}`
@@ -210,7 +210,7 @@ export default function BlogList({
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
