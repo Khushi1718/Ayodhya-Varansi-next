@@ -9,10 +9,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     if (/^[0-9a-fA-F]{24}$/.test(slug)) query.$or.push({ _id: new ObjectId(slug) });
 
     const db = await getDb();
-    const pkg = await db.collection("packages").findOne(query);
+    const pkg = await db.collection("packages").findOne(query, { projection: { _id: 0 } });
     if (!pkg) return NextResponse.json({ success: false, error: "Package not found" }, { status: 404 });
 
-    return NextResponse.json({ success: true, data: pkg });
+    return NextResponse.json(
+      { success: true, data: pkg },
+      {
+        headers: {
+          // Packages change infrequently — cache for 10 minutes, revalidate for 1 hour
+          "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to fetch package" }, { status: 500 });
   }

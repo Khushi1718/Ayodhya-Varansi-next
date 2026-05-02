@@ -36,9 +36,7 @@ export default function BlogPage() {
     };
 
     fetchBlogs();
-    // Auto-refresh every 30 seconds to show new blogs from CMS
-    const interval = setInterval(fetchBlogs, 30000);
-    return () => clearInterval(interval);
+    // No polling — the CDN cache (s-maxage=60) handles freshness efficiently
   }, []);
 
   const featuredPost = blogs[0] || null;

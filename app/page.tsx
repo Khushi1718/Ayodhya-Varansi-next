@@ -1,30 +1,36 @@
-"use client";
-
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
+import type { Metadata } from "next";
 
-// Dynamically import sections below the fold
+export const metadata: Metadata = {
+  title: "Divine Journeys | Ayodhya & Varanasi Pilgrimage Tours",
+  description: "Experience the soul of India with curated spiritual journeys to Ayodhya, Varanasi, and Prayagraj. VIP Darshan, expert guides, and luxury stays.",
+  keywords: ["Ayodhya Tourism", "Varanasi Tour Packages", "Kashi Vishwanath Darshan", "Ram Mandir Ayodhya", "Spiritual Tours India"],
+  openGraph: {
+    title: "Divine Journeys | Ayodhya & Varanasi Pilgrimage Tours",
+    description: "Experience the soul of India with curated spiritual journeys to Ayodhya and Varanasi.",
+    type: "website",
+  },
+};
+
+// Dynamically import sections below the fold — SSR optional, lazy on client
 const PackagesSection = dynamic(() => import("@/components/PackagesSection"), {
-  loading: () => <div className="min-h-[600px] flex items-center justify-center bg-muted/20 animate-pulse">Loading Packages...</div>,
+  loading: () => <div className="min-h-[600px] flex items-center justify-center bg-muted/20 animate-pulse" />,
 });
 const InfoBannerStrip = dynamic(() => import("@/components/InfoBannerStrip"), {
-  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />
+  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
 });
 const TestimonialsSection = dynamic(() => import("@/components/TestimonialsSection"), {
-  ssr: false,
-  loading: () => <div className="min-h-[300px] bg-muted/10 animate-pulse" />
+  loading: () => <div className="min-h-[300px] bg-muted/10 animate-pulse" />,
 });
 const AboutSection = dynamic(() => import("@/components/AboutSection"), {
-  ssr: false,
-  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />
+  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
 });
 const BlogSection = dynamic(() => import("@/components/BlogSection"), {
-  ssr: false,
-  loading: () => <div className="min-h-[500px] bg-muted/10 animate-pulse" />
+  loading: () => <div className="min-h-[500px] bg-muted/10 animate-pulse" />,
 });
 const CustomisedPackageSection = dynamic(() => import("@/components/CustomisedPackageSection"), {
-  ssr: false,
-  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />
+  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
 });
 
 export default function Home() {

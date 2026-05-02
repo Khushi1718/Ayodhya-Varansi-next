@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 const UPLOAD_FOLDER = "divine-journeys-cms";
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 
 function getCloudinaryConfig() {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
@@ -23,12 +25,7 @@ function createSignature(params: Record<string, string>, apiSecret: string) {
     .join("&");
 
   const stringToSign = `${signaturePayload}${apiSecret}`;
-  const signature = createHash("sha1").update(stringToSign).digest("hex");
-  
-  // Log the string to sign (without secret) for debugging purposes
-  console.log("Cloudinary Upload - String to sign (payload only):", signaturePayload);
-  
-  return signature;
+  return createHash("sha1").update(stringToSign).digest("hex");
 }
 
 export async function POST(request: Request) {
@@ -41,10 +38,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "No image file provided" }, { status: 400 });
     }
 
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return NextResponse.json(
+        { success: false, error: `File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.` },
+        { status: 413 }
+      );
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid file type. Only JPEG, PNG, WebP, AVIF, and GIF are allowed." },
+        { status: 415 }
+      );
+    }
+
     const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    
-    // Cloudinary signed upload parameters
+
     const paramsToSign: Record<string, string> = {
       folder: folder,
       timestamp: timestamp,
@@ -72,14 +84,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: message }, { status: uploadResponse.status });
     }
 
-    return NextResponse.json({
-      success: true,
-      url: uploadResult.secure_url,
-      publicId: uploadResult.public_id,
-      width: uploadResult.width,
-      height: uploadResult.height,
-      format: uploadResult.format,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        url: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        width: uploadResult.width,
+        height: uploadResult.height,
+        format: uploadResult.format,
+      },
+      {
+        headers: {
+          // Uploads are one-shot writes — never cache
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     console.error("Upload Route Error:", error);
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Upload failed" }, { status: 500 });

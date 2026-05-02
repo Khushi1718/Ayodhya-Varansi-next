@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
 
-const DEFAULT_THUMBNAIL = "https://via.placeholder.com/500x300?text=Divine+Journeys";
-const DEFAULT_COVER = "https://via.placeholder.com/1200x600?text=Divine+Journeys";
+const DEFAULT_THUMBNAIL = "https://res.cloudinary.com/dl5asi233/image/upload/v1/divine-journeys-cms/placeholder.jpg";
+const DEFAULT_COVER = "https://res.cloudinary.com/dl5asi233/image/upload/v1/divine-journeys-cms/cover-placeholder.jpg";
 
 function isValidImageValue(value: unknown) {
   if (typeof value !== "string") return false;
@@ -22,7 +22,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (/^[0-9a-fA-F]{24}$/.test(id)) query.$or.push({ _id: new ObjectId(id) });
 
     const db = await getDb();
-    const blog = await db.collection("blogs").findOne(query);
+    const blog = await db.collection("blogs").findOne(query, { projection: { _id: 0 } });
     if (!blog) return NextResponse.json({ success: false, error: "Blog not found" }, { status: 404 });
 
     const safeBlog = {
@@ -38,7 +38,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
           ? blog.thumbnailImage
           : DEFAULT_COVER,
     };
-    return NextResponse.json({ success: true, data: safeBlog });
+
+    return NextResponse.json(
+      { success: true, data: safeBlog },
+      {
+        headers: {
+          // Cache individual blog posts for 5 minutes at CDN, revalidate for up to 30 min
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=1800",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to fetch blog" }, { status: 500 });
   }

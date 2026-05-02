@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import { getDb } from "@/lib/db";
+import { getDb, ensureIndexes } from "@/lib/db";
 
-const DEFAULT_THUMBNAIL = "https://via.placeholder.com/500x300?text=Divine+Journeys";
-const DEFAULT_COVER = "https://via.placeholder.com/1200x600?text=Divine+Journeys";
+const DEFAULT_THUMBNAIL = "https://res.cloudinary.com/dl5asi233/image/upload/v1/divine-journeys-cms/placeholder.jpg";
+const DEFAULT_COVER = "https://res.cloudinary.com/dl5asi233/image/upload/v1/divine-journeys-cms/cover-placeholder.jpg";
 
 function isValidImageValue(value: unknown) {
   if (typeof value !== "string") return false;
@@ -16,9 +16,31 @@ function isValidImageValue(value: unknown) {
 }
 
 export async function GET() {
+  await ensureIndexes();
   try {
     const db = await getDb();
-    const blogs = await db.collection("blogs").find({ status: "published" }).toArray();
+    const blogs = await db
+      .collection("blogs")
+      .find({ status: "published" }, {
+        // Only project the fields needed for the blog card list
+        projection: {
+          _id: 0,
+          id: 1,
+          slug: 1,
+          title: 1,
+          subtitle: 1,
+          preview: 1,
+          category: 1,
+          author: 1,
+          date: 1,
+          readTime: 1,
+          thumbnailImage: 1,
+          status: 1,
+        }
+      })
+      .sort({ date: -1 })
+      .toArray();
+
     const blogCards = blogs.map((blog) => ({
       id: blog.id,
       slug: blog.slug,
@@ -28,10 +50,20 @@ export async function GET() {
       category: blog.category,
       author: blog.author,
       date: blog.date,
+      readTime: blog.readTime,
       thumbnailImage: isValidImageValue(blog.thumbnailImage) ? blog.thumbnailImage : DEFAULT_THUMBNAIL,
       status: blog.status || "published",
     }));
-    return NextResponse.json({ success: true, data: blogCards, count: blogCards.length });
+
+    return NextResponse.json(
+      { success: true, data: blogCards, count: blogCards.length },
+      {
+        headers: {
+          // CDN serves cached response for 60 s; simultaneously revalidates in background for up to 5 min
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to fetch blogs" }, { status: 500 });
   }
