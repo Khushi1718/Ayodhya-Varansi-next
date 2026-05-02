@@ -98,21 +98,27 @@ const Packages = () => {
   const fetchPackages = async () => {
     try {
       const API_BASE = "/api";
-      const response = await fetch(`${API_BASE}/packages`);
+      const response = await fetch(`${API_BASE}/packages`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
       
       if (data.success && data.data.length > 0) {
         // Map dynamic packages to match the local UI format
         const dynamicPackages = data.data.map((pkg: any) => ({
           ...pkg,
-          image: pkg.images?.main || ayodhyaTemple, // Use fallback if no image
+          image: pkg.images?.main || pkg.image || ayodhyaTemple,
           title: pkg.title,
           destination: pkg.destination,
           duration: pkg.duration,
           durationCategory: pkg.durationCategory,
-          highlights: pkg.highlights || [],
+          highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
           rating: pkg.rating || 5.0,
-          slug: pkg.slug
+          slug: pkg.slug || pkg.id
         }));
         
         // Merge: Dynamic first, then static
@@ -322,7 +328,7 @@ const Packages = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-4">
                 {filtered.map((pkg, i) => (
                   <div
-                    key={pkg.title}
+                    key={pkg.slug || pkg.id || pkg.title || i}
                     className={`bg-background rounded-xl overflow-hidden border  border-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${
                       isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                     }`}
