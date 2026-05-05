@@ -167,6 +167,8 @@ export default function PackageTemplate() {
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch package from CMS
   useEffect(() => {
@@ -207,7 +209,9 @@ export default function PackageTemplate() {
 
   // Auto-slide testimonials (Native Scroll)
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (!isAutoScrolling) return;
+
+    timerRef.current = setInterval(() => {
       if (scrollRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
         const isAtEnd = scrollLeft + clientWidth >= scrollWidth - 20;
@@ -215,30 +219,46 @@ export default function PackageTemplate() {
         if (isAtEnd) {
           scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          scrollRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+          const cardWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 768 ? 320 : 400;
+          scrollRef.current.scrollBy({ left: cardWidth + 24, behavior: 'smooth' });
         }
       }
     }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isAutoScrolling]);
+
+  const handleUserInteraction = () => {
+    setIsAutoScrolling(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    // Resume after 10 seconds of inactivity
+    setTimeout(() => setIsAutoScrolling(true), 10000);
+  };
 
   const handleScroll = () => {
     if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const index = Math.round(scrollLeft / 350);
+      const { scrollLeft } = scrollRef.current;
+      const cardWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 768 ? 320 : 400;
+      const index = Math.round(scrollLeft / (cardWidth + 24));
       setActiveTestimonial(index);
     }
   };
 
   const nextTestimonial = () => {
+    handleUserInteraction();
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 350, behavior: 'smooth' });
+      const cardWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 768 ? 320 : 400;
+      scrollRef.current.scrollBy({ left: cardWidth + 24, behavior: 'smooth' });
     }
   };
 
   const prevTestimonial = () => {
+    handleUserInteraction();
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -350, behavior: 'smooth' });
+      const cardWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 768 ? 320 : 400;
+      scrollRef.current.scrollBy({ left: -(cardWidth + 24), behavior: 'smooth' });
     }
   };
 
@@ -266,7 +286,7 @@ export default function PackageTemplate() {
     <main className="min-h-screen bg-[#fafaf8] pb-0">
       
       {/* ── HEADER TITLE ── */}
-      <section className="pt-20 pb-10 px-6 bg-white">
+      <section className="pt-24 md:pt-28 pb-10 px-6 bg-white">
         <div className="container mx-auto">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-6 font-bold uppercase tracking-widest">
@@ -598,8 +618,7 @@ export default function PackageTemplate() {
       <section className="py-20 px-6 bg-[#fffcf9]">
          <div className="container mx-auto">
             <div className="mb-12">
-               <p className="text-[10px] font-bold text-[hsl(var(--primary))] uppercase tracking-[0.2em] mb-3 text-center md:text-left">Guest Experiences</p>
-               <h2 className="font-heading text-3xl md:text-5xl font-bold text-gray-900 text-center md:text-left">Real feedback from guests</h2>
+               <h2 className="font-heading text-2xl md:text-5xl font-bold text-gray-900 text-center md:text-left">Guest Experiences</h2>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-12 items-start">
@@ -634,17 +653,18 @@ export default function PackageTemplate() {
                   </div>
                </div>
 
-               <div className="flex-1 relative overflow-hidden">
+               <div className="w-full relative">
                   <div 
                     ref={scrollRef}
                     onScroll={handleScroll}
-                    className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 hide-scrollbar px-2"
+                    onPointerDown={handleUserInteraction}
+                    className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 hide-scrollbar px-2 touch-pan-x"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   >
                      {pkg.testimonials.map((t: any, i: number) => (
                         <div 
                           key={i} 
-                          className="snap-start w-[320px] min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-3xl p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex-shrink-0 flex flex-col group relative"
+                          className="snap-start w-[280px] min-w-[280px] sm:w-[320px] sm:min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-3xl p-6 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex-shrink-0 flex flex-col group relative"
                         >
                            <div className="absolute top-8 right-8 text-orange-500/5 group-hover:text-orange-500/10 transition-colors">
                               <ThumbsUp size={80} strokeWidth={1} />
@@ -696,7 +716,8 @@ export default function PackageTemplate() {
                              key={i}
                              onClick={() => {
                                if (scrollRef.current) {
-                                 scrollRef.current.scrollTo({ left: i * (window.innerWidth < 768 ? 320 + 24 : 400 + 24), behavior: 'smooth' });
+                                 const cardWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 768 ? 320 : 400;
+                                 scrollRef.current.scrollTo({ left: i * (cardWidth + 24), behavior: 'smooth' });
                                }
                              }}
                              className={`h-1.5 rounded-full transition-all duration-500 ${activeTestimonial === i ? 'w-8 bg-orange-500 shadow-lg shadow-orange-200' : 'w-2 bg-gray-200'}`}

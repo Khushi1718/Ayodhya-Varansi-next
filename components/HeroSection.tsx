@@ -141,28 +141,32 @@ export default function HeroSection() {
 
             {/* Right Form */}
             <div className="hero-form-container w-full max-w-[400px] shrink-0 h-slide-enter-d2">
-              <div className="glass-form rounded-[32px] p-8 md:p-10 border border-white/10 relative overflow-hidden flex flex-col justify-center">
+              <div className="glass-form rounded-[32px] py-6 px-8 md:py-8 md:px-10 border border-white/10 relative overflow-hidden flex flex-col justify-center">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-[#E87B2C]/10 blur-[80px] pointer-events-none" />
                 
                 <div className="relative z-10">
-                  <h3 className="font-heading text-xl md:text-2xl text-white font-bold mb-1 tracking-tight text-center lg:text-left">Plan Your Journey</h3>
-                  <p className="text-white/60 text-[10px] mb-8 font-body leading-relaxed text-center lg:text-left uppercase tracking-widest font-bold">Simple. Personal. Extraordinary.</p>
+                  <h3 className="font-heading text-xl md:text-2xl text-white font-bold mb-0.5 tracking-tight text-center lg:text-left">Plan Your Journey</h3>
+                  <p className="text-white/60 text-[9px] mb-6 font-body leading-relaxed text-center lg:text-left uppercase tracking-widest font-bold">Simple. Personal. Extraordinary.</p>
                   
-                  <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-                    <div className="space-y-2">
+                  <form className="space-y-2.5" onSubmit={(e) => e.preventDefault()}>
+                    <div className="space-y-1">
                       <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Full Name</label>
-                      <Input placeholder="Your Name" className="hero-input font-body bg-white/5" />
+                      <Input placeholder="Your Name" className="hero-input font-body bg-white/5 h-10 !important" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Phone Number</label>
-                      <Input placeholder="+91 XXXXX XXXXX" className="hero-input font-body bg-white/5" />
+                      <Input placeholder="+91 XXXXX XXXXX" className="hero-input font-body bg-white/5 h-10 !important" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Email Address</label>
+                      <Input type="email" placeholder="your@email.com" className="hero-input font-body bg-white/5 h-10 !important" />
+                    </div>
+                    <div className="space-y-1">
                       <label className="text-[9px] text-white/50 uppercase tracking-[0.2em] ml-1 font-bold">Your Message</label>
-                      <Input placeholder="E.g. Ayodhya trip for 4 people..." className="hero-input font-body bg-white/5" />
+                      <Input placeholder="E.g. Ayodhya trip for 4 people..." className="hero-input font-body bg-white/5 h-10 !important" />
                     </div>
 
-                    <Button className="w-full h-12 bg-[#E87B2C] hover:bg-[#d16a1b] text-white font-bold text-xs rounded-xl transition-all duration-300 shadow-[0_8px_20px_rgba(232,123,44,0.2)] flex items-center justify-center gap-2 group mt-4 border-none">
+                    <Button className="w-full h-11 bg-[#E87B2C] hover:bg-[#d16a1b] text-white font-bold text-xs rounded-xl transition-all duration-300 shadow-[0_8px_20px_rgba(232,123,44,0.2)] flex items-center justify-center gap-2 group mt-3 border-none">
                       Get Expert Advice
                       <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </Button>

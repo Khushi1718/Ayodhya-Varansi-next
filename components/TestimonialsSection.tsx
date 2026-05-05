@@ -112,7 +112,7 @@ export default function TestimonialsSection() {
             The Travel & Tourism Annual Conclave Awards
           </h2>
           
-          <div className="flex flex-col sm:flex-row items-center lg:items-start gap-8 justify-center lg:justify-start border-t border-b border-gray-100 py-8 w-full max-w-md mx-auto lg:mx-0">
+          <div className="hidden md:flex flex-col sm:flex-row items-center lg:items-start gap-8 justify-center lg:justify-start border-t border-b border-gray-100 py-8 w-full max-w-md mx-auto lg:mx-0">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-[#ff5722] text-white rounded-full flex items-center justify-center font-bold text-xl shadow-md">
                 ★

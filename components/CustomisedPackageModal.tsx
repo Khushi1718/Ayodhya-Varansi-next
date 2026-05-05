@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { X } from "lucide-react";
 
 interface CustomisedPackageModalProps {
   open: boolean;
@@ -16,6 +17,7 @@ const API_BASE = "/api";
 const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalProps) => {
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     message: "",
   });
@@ -36,7 +38,7 @@ const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalPr
         body: JSON.stringify(formData),
       });
       if (response.ok) {
-        setFormData({ name: "", phone: "", message: "" });
+        setFormData({ name: "", email: "", phone: "", message: "" });
         onOpenChange(false);
       }
     } catch (error) {
@@ -48,73 +50,90 @@ const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[92%] sm:max-w-[400px] p-6 md:p-8 border-none bg-white rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden">
-        <div className="text-center mb-6">
-          <DialogTitle className="font-heading text-2xl md:text-3xl text-gray-900 mb-2 font-bold tracking-tight">
-            Tailor Your Experience
-          </DialogTitle>
-          <DialogDescription className="text-gray-500 text-[13px] font-medium leading-relaxed px-2">
-            Share your preferences and we'll craft a bespoke itinerary for you.
-          </DialogDescription>
+      <DialogContent className="p-0 border-none bg-white/95 backdrop-blur-xl rounded-[28px] overflow-hidden max-w-[92%] sm:max-w-[420px] shadow-[0_25px_50px_-12px_rgba(38,38,38,0.1)]">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--gold))] to-[hsl(var(--primary))]"></div>
+
+        <div className="relative p-7 sm:p-9 pt-10">
+          <button 
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 w-8 h-8 bg-gray-50/80 hover:bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all duration-300 z-10"
+          >
+            <X size={16} />
+          </button>
+
+          <div className="mb-8 text-center">
+            <DialogTitle className="text-gray-900 text-2xl md:text-3xl font-heading font-bold mb-2 tracking-tight">
+              Customised Package
+            </DialogTitle>
+            <div className="flex items-center justify-center gap-3">
+              <span className="h-px w-6 bg-gray-100"></span>
+              <DialogDescription className="text-gray-400 text-[10px] uppercase tracking-[0.2em] font-bold">
+                Your Journey, Your Way
+              </DialogDescription>
+              <span className="h-px w-6 bg-gray-100"></span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-3.5">
+              <div className="relative group">
+                <Input 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleInputChange} 
+                  placeholder="Full Name *" 
+                  className="h-12 bg-gray-50/50 border-gray-100 rounded-xl px-5 text-sm focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-4 focus:ring-[hsl(var(--primary))]/5 transition-all duration-300 outline-none placeholder:text-gray-400" 
+                  required 
+                />
+              </div>
+
+              <div className="relative group">
+                <Input 
+                  name="email" 
+                  type="email"
+                  value={formData.email} 
+                  onChange={handleInputChange} 
+                  placeholder="Email Address *" 
+                  className="h-12 bg-gray-50/50 border-gray-100 rounded-xl px-5 text-sm focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-4 focus:ring-[hsl(var(--primary))]/5 transition-all duration-300 outline-none placeholder:text-gray-400" 
+                  required 
+                />
+              </div>
+
+              <div className="relative group">
+                <Input 
+                  name="phone" 
+                  type="tel" 
+                  value={formData.phone} 
+                  onChange={handleInputChange} 
+                  placeholder="Phone Number *" 
+                  className="h-12 bg-gray-50/50 border-gray-100 rounded-xl px-5 text-sm focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-4 focus:ring-[hsl(var(--primary))]/5 transition-all duration-300 outline-none placeholder:text-gray-400" 
+                  required 
+                />
+              </div>
+
+              <div className="relative group">
+                <Textarea 
+                  name="message" 
+                  value={formData.message} 
+                  onChange={handleInputChange} 
+                  placeholder="Your Requirements (e.g. destinations, preferences) *" 
+                  className="min-h-[110px] bg-gray-50/50 border-gray-100 rounded-xl px-5 py-4 text-sm placeholder:text-gray-400 resize-none transition-all duration-300 outline-none focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-4 focus:ring-[hsl(var(--primary))]/5" 
+                  required 
+                />
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--gold))] text-white font-bold h-13 py-3.5 rounded-xl hover:shadow-lg hover:shadow-[hsl(var(--primary))]/25 active:scale-[0.98] transition-all duration-300 text-[13px] tracking-wide shadow-md disabled:opacity-50"
+              >
+                {loading ? "Submitting..." : "Send Request"}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="custom-name" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Full Name
-            </Label>
-            <Input 
-              id="custom-name" 
-              name="name" 
-              value={formData.name} 
-              onChange={handleInputChange} 
-              placeholder="Your Name" 
-              className="h-11 bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl px-4 text-sm transition-all outline-none" 
-              required 
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="custom-phone" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Phone Number
-            </Label>
-            <Input 
-              id="custom-phone" 
-              name="phone" 
-              type="tel" 
-              value={formData.phone} 
-              onChange={handleInputChange} 
-              placeholder="+91 XXXXX XXXXX" 
-              className="h-11 bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl px-4 text-sm transition-all outline-none" 
-              required 
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="custom-message" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 ml-1">
-              Your Requirements
-            </Label>
-            <Textarea 
-              id="custom-message" 
-              name="message" 
-              value={formData.message} 
-              onChange={handleInputChange} 
-              placeholder="Tell us about your dream journey..." 
-              className="min-h-[100px] bg-gray-50/50 border-gray-100 focus:bg-white focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary))]/10 rounded-xl px-4 py-3 text-sm placeholder:text-gray-300 resize-none transition-all outline-none" 
-              required 
-            />
-          </div>
-
-          <div className="pt-2">
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-[hsl(var(--primary))] text-white font-bold h-12 rounded-xl hover:brightness-105 active:scale-[0.98] transition-all text-sm shadow-lg shadow-[hsl(var(--primary))]/20 disabled:opacity-50"
-            >
-              {loading ? "Submitting..." : "Submit Request"}
-            </button>
-          </div>
-        </form>
       </DialogContent>
     </Dialog>
   );
