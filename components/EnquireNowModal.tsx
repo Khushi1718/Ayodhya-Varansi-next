@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 
 interface EnquireNowModalProps {
@@ -47,7 +46,7 @@ const EnquireNowModal = ({ open, onOpenChange }: EnquireNowModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 border-none bg-white/95 backdrop-blur-xl rounded-[28px] overflow-hidden max-w-[92%] sm:max-w-[400px] shadow-[0_25px_50px_-12px_rgba(232,123,44,0.15)]">
+      <DialogContent hideCloseButton className="p-0 border-none bg-white/95 backdrop-blur-xl rounded-[28px] overflow-hidden max-w-[92%] sm:max-w-[400px] shadow-[0_25px_50px_-12px_rgba(232,123,44,0.15)]">
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#FF6B00] via-[#E87B2C] to-[#FBB03B]"></div>
         
         <div className="relative p-7 sm:p-9 pt-10">

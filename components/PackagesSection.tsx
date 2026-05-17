@@ -15,6 +15,33 @@ import pkgGangesSunrise from "@/assets/pkg-ganges-sunrise.png";
 
 const fallbackPackages: any[] = [];
 
+const getPackageImage = (pkg: any) => {
+  const candidate = pkg.images?.main || pkg.image;
+  if (typeof candidate === "string" && candidate.trim()) return candidate;
+  if (candidate && typeof candidate === "object" && "src" in candidate) return candidate;
+  return pkgAyodhya;
+};
+
+const cleanCardText = (value: string) =>
+  value
+    .replace(/<[^>]*>?/gm, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+
+const getCardKeyPoints = (pkg: any) => {
+  const keyPoints = Array.isArray(pkg.cardKeyPoints) ? pkg.cardKeyPoints : [];
+  const highlights = Array.isArray(pkg.highlights) ? pkg.highlights : [];
+  return (keyPoints.length > 0 ? keyPoints : highlights)
+    .map((item: string) => cleanCardText(item))
+    .filter(Boolean)
+    .slice(0, 3);
+};
+
+const getPackageRenderKey = (scope: string, index: number) => `${scope}-package-${index}`;
+
 /* ------------------------------------------------------------------ */
 /*  COMPONENT                                                           */
 /* ----------------------------------------------------------------/* ── MEMOIZED CARD FOR PERFORMANCE ── */
@@ -24,7 +51,7 @@ const PackageCard = React.memo(({ p, i, active, onEnquire }: { p: any, i: number
       {/* image */}
       <div className="ps-card-image">
         <Image
-          src={p.image}
+          src={getPackageImage(p)}
           alt={p.destination}
           fill
           sizes="(max-width: 768px) 300px, 360px"
@@ -59,8 +86,8 @@ const PackageCard = React.memo(({ p, i, active, onEnquire }: { p: any, i: number
         {p.highlights && p.highlights.length > 0 && (
           <>
             <div className="ps-card-highlights">
-              {p.highlights.slice(0, 3).map((h: string) => (
-                <div key={h} className="ps-card-highlight-item">
+              {p.highlights.slice(0, 3).map((h: string, highlightIndex: number) => (
+                <div key={`card-${i}-highlight-${highlightIndex}`} className="ps-card-highlight-item">
                   <span className="ps-card-highlight-dot" style={{ width: 4, height: 4, borderRadius: "50%", background: "hsl(var(--primary))", marginTop: 7 }} />
                   {h}
                 </div>
@@ -117,12 +144,12 @@ const PackagesSection = () => {
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           const cmsPackages = data.data.map((pkg: any) => ({
             id: pkg.id || pkg._id,
-            image: pkg.images?.main || pkg.image || pkgAyodhya,
+            image: getPackageImage(pkg),
             destination: pkg.destination || 'Destination',
             tag: pkg.destination || 'Pilgrimage',
             title: pkg.title || 'Package Title',
             duration: pkg.duration || '3 Days · 2 Nights',
-            highlights: Array.isArray(pkg.highlights) && pkg.highlights.length > 0 ? pkg.highlights.slice(0, 3) : [],
+            highlights: getCardKeyPoints(pkg),
             places: pkg.highlights || [],
             rating: pkg.rating || 4.8,
             reviews: pkg.reviews || 100,
@@ -668,7 +695,7 @@ const PackagesSection = () => {
             >
               {packages.map((p, i) => (
                 <button
-                  key={p.id}
+                  key={getPackageRenderKey("list", i)}
                   onClick={() => { setActive(i); goTo(i); resetAutoRotate(); }}
                   className={`ps-list-item ${i === active ? "active" : ""}`}
                 >
@@ -720,7 +747,7 @@ const PackagesSection = () => {
           >
             {packages.map((p, i) => (
               <PackageCard 
-                key={p.id} 
+                key={getPackageRenderKey("track", i)} 
                 p={p} 
                 i={i} 
                 active={active} 

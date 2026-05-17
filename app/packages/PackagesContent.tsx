@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Clock, MapPin, Star, SlidersHorizontal, Loader, Tag } from "lucide-react";
 import Link from "next/link";
+import pkgAyodhya from "@/assets/pkg-ayodhya.png";
 
 const destinations = ["Ayodhya", "Varanasi", "Ayodhya + Varanasi"];
 const durations = [
@@ -18,6 +19,13 @@ const durations = [
   { label: "4–5 Days", value: "4-5" },
   { label: "6+ Days", value: "6+" },
 ];
+
+const getPackageImage = (pkg: any) => {
+  const candidate = pkg.images?.main || pkg.image;
+  if (typeof candidate === "string" && candidate.trim()) return candidate;
+  if (candidate && typeof candidate === "object" && "src" in candidate) return candidate;
+  return pkgAyodhya;
+};
 
 const StatCard = ({ label, value, suffix, decimals, delay }: { label: string; value: number; suffix: string; decimals: number; delay: number }) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -180,7 +188,9 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
                 style={{ maxHeight: '880px' }}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-4">
-                {filtered.map((pkg, i) => (
+                {filtered.map((pkg, i) => {
+                  const packageImage = getPackageImage(pkg);
+                  return (
                   <div
                     key={pkg.slug || pkg.id || pkg.title || i}
                     className={`bg-background rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 ${
@@ -191,7 +201,7 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
 
                     <Link href={`/packages/${pkg.slug || 'divine-ayodhya-kashi-pilgrimage'}`} className="block relative h-48 overflow-hidden">
                       <Image 
-                        src={pkg.image} 
+                        src={packageImage} 
                         alt={pkg.title} 
                         fill 
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
@@ -215,12 +225,18 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
                         <span className="flex items-center gap-1"><MapPin size={13} /> India</span>
                       </div>
                       <ul className="space-y-1.5">
-                        {pkg.highlights.map((h: string) => (
-                          <li key={h} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <span className="w-1 h-1 rounded-full bg-primary" />
-                            {h}
-                          </li>
-                        ))}
+                        {((pkg.cardKeyPoints && pkg.cardKeyPoints.filter((k: string) => k?.trim()).length > 0)
+                          ? pkg.cardKeyPoints.filter((k: string) => k?.trim())
+                          : (pkg.highlights || []).slice(0, 3)
+                        ).map((h: string, hi: number) => {
+                          const cleanText = h.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+                          return (
+                            <li key={hi} className="text-sm text-muted-foreground flex items-start gap-2 min-w-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 mt-1.5" />
+                              <span className="flex-1 min-w-0 break-words line-clamp-2">{cleanText}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                       <div className="flex gap-2 pt-3 border-t border-border">
                         <Link href={`/packages/${pkg.slug || 'template'}`} className="btn-outline-divine text-xs py-2 px-4 flex-1 text-center flex items-center justify-center">View Details</Link>
@@ -228,7 +244,8 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 </div>
               </div>
             )}

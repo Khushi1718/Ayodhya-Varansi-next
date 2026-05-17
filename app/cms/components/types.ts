@@ -50,12 +50,25 @@ export interface BlogListProps {
 export interface ItineraryDay {
   day: string;
   title: string;
-  desc: string;
+  details?: string; // Rich text/HTML content from editor
+  tags?: { title: string; content: string }[]; // Practical notes/tips
 }
 
 export interface FAQ {
   q: string;
   a: string;
+}
+
+export interface GroundTruth {
+  title: string;
+  description: string; // Rich text/HTML content
+}
+
+export interface Testimonial {
+  name: string;
+  rating: number;
+  review: string;
+  avatar?: string;
 }
 
 export interface Package {
@@ -84,6 +97,10 @@ export interface Package {
   isOffer?: boolean;
   offerPercentage?: string;
   status?: string;
+  knowBeforeYouGo?: string[];
+  groundTruth?: GroundTruth[];
+  testimonials?: Testimonial[];
+  cardKeyPoints?: string[];
 }
 
 export interface PackageListProps {

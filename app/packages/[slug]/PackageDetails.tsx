@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { 
-  MapPin, Clock, Star, Check, X, Calendar, Users, Shield, 
-  ChevronDown, ArrowRight, FileText, Share2, Image as ImageIcon,
-  ChevronLeft, ChevronRight, Phone, Mail, Award, ThumbsUp, Sparkles
+  MapPin, Clock, Star, Check, X, Calendar, Shield, 
+  ChevronDown, ArrowRight, Share2,
+  ChevronLeft, ChevronRight, Phone, Award, ThumbsUp,
+  RotateCcw, Ban, CreditCard, CheckCircle, Info, Sparkles
 } from "lucide-react";
 
 import CustomisedPackageModal from "@/components/CustomisedPackageModal";
@@ -163,6 +164,8 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
   const params = useParams();
   const [pkg, setPkg] = useState<any>(initialPkg);
   const [openDay, setOpenDay] = useState(0);
+  const [openFaq, setOpenFaq] = useState<number>(-1);
+  const [openPolicy, setOpenPolicy] = useState<number>(0);
   const [enquireOpen, setEnquireOpen] = useState(false);
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -383,18 +386,48 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
             {/* Overview */}
             <div id="overview" className="space-y-6">
               <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900">About the Journey</h2>
-              <p className="text-gray-600 leading-relaxed text-[15px] md:text-base">
-                {pkg.about}
-              </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {pkg.highlights.map((h: string, i: number) => (
-                  <div key={i} className="flex items-center gap-3 bg-[#fafaf8] p-4 rounded-xl border border-gray-100 transition-colors">
-                    <Check size={16} className="text-[hsl(var(--primary))] shrink-0" strokeWidth={3} />
-                    <span className="text-gray-700 font-semibold text-sm md:text-base">{h}</span>
+
+              {/* About — render as rich HTML if from Quill, else plain text */}
+              {pkg.about && pkg.about.includes('<') ? (
+                <div
+                  className="text-gray-600 leading-relaxed text-[15px] md:text-base [&_p]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-4 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-800 [&_a]:text-orange-600 [&_a]:underline break-words"
+                  dangerouslySetInnerHTML={{ __html: pkg.about }}
+                />
+              ) : (
+                <p className="text-gray-600 leading-relaxed text-[15px] md:text-base break-words">{pkg.about}</p>
+              )}
+
+              {/* Highlights — filter empty Quill output */}
+              {(() => {
+                const items = (pkg.highlights || []).filter((h: string) =>
+                  h && h.trim() && h !== '<p><br></p>' && h !== '<p></p>'
+                );
+                if (items.length === 0) return null;
+                return (
+                  <div className="mt-10 mb-6">
+                    <h3 className="font-heading text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                      Key Highlights
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {items.map((h: string, i: number) => (
+                        <div key={i} className="bg-white p-6 rounded-2xl border border-orange-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(249,115,22,0.08)] transition-all duration-300 relative overflow-hidden group">
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-orange-400 to-orange-600 opacity-80 group-hover:opacity-100 transition-opacity" />
+                          <div className="relative z-10 min-w-0">
+                            {h.includes('<') ? (
+                              <div
+                                className="text-gray-700 text-[14.5px] leading-relaxed [&_p]:mb-3 last:[&_p]:mb-0 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-gray-900 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-gray-900 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-3 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-900 break-words"
+                                dangerouslySetInnerHTML={{ __html: h }}
+                              />
+                            ) : (
+                              <p className="text-gray-700 text-[14.5px] leading-relaxed break-words">{h}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
 
             {/* Itinerary */}
@@ -434,9 +467,10 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                     
                     <div className={`grid transition-all duration-300 ease-in-out ${openDay === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden">
-                        <div className="px-6 pb-8 pt-0 md:pl-20">
-                          <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100/50">
-                            <p className="text-gray-600 leading-relaxed text-[15px] md:text-base">{day.desc}</p>
+                        <div className="px-6 pb-8 pt-0 md:pl-20 space-y-6">
+                          {/* Short Description */}
+                          <div className="p-6 bg-white rounded-2xl border border-gray-100/50">
+                            <p className="text-gray-600 leading-relaxed text-[15px] md:text-base break-words">{day.desc}</p>
                             <div className="mt-4 flex flex-wrap gap-4">
                                <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                                   <MapPin size={12} className="text-orange-300" /> Sightseeing included
@@ -446,6 +480,62 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                                </div>
                             </div>
                           </div>
+
+                          {/* Rich Text Details */}
+                          {day.details && (
+                            <div className="p-6 bg-white rounded-2xl border border-orange-100/50 space-y-4">
+                              <style>{`
+                                .itinerary-details h1 { font-size: 1.875rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #111827; }
+                                .itinerary-details h2 { font-size: 1.5rem; font-weight: bold; margin-top: 0.875rem; margin-bottom: 0.5rem; color: #111827; }
+                                .itinerary-details h3 { font-size: 1.25rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
+                                .itinerary-details h4 { font-size: 1.125rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
+                                .itinerary-details p { color: #4b5563; line-height: 1.6; margin-bottom: 1rem; }
+                                .itinerary-details strong { font-weight: 600; color: #1f2937; }
+                                .itinerary-details em { font-style: italic; }
+                                .itinerary-details ol, .itinerary-details ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+                                .itinerary-details li { margin-bottom: 0.5rem; color: #4b5563; }
+                                .itinerary-details ol { list-style-type: decimal; }
+                                .itinerary-details ul { list-style-type: disc; }
+                                .itinerary-pill-tag { display: inline-flex; align-items: center; padding: 2px 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 9999px; font-size: 11px; font-weight: 700; margin: 0 3px; cursor: default; user-select: none; vertical-align: middle; white-space: nowrap; }
+                              `}</style>
+                              <div className="itinerary-details text-gray-700 break-words max-h-[350px] overflow-y-auto pr-4 custom-scrollbar" dangerouslySetInnerHTML={{ __html: day.details }} />
+                            </div>
+                          )}
+
+                          {/* Activity / Location Tags — matching the reference image */}
+                          {day.tags && day.tags.filter((t: any) => t.title?.trim()).length > 0 && (
+                            <div className="p-6 bg-[#fbf8f1] rounded-2xl space-y-6">
+                              <div>
+                                <h4 className="font-bold text-gray-900 text-lg mb-4">Places Covered</h4>
+                                <div className="space-y-3">
+                                  {day.tags.filter((t: any) => t.title?.trim()).map((tag: any, tagIdx: number) => (
+                                    <div
+                                      key={tagIdx}
+                                      className="bg-white rounded-[14px] py-4 px-5 flex items-center gap-4 relative overflow-hidden"
+                                    >
+                                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500 rounded-l-[14px]"></div>
+                                      <span className="w-2.5 h-2.5 rounded-full bg-orange-400 shrink-0 opacity-80 ml-1" />
+                                      <span className="font-bold text-gray-900 text-[15px]">{tag.title}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              {/* Detailed Notes (only when content exists) */}
+                              {day.tags.some((t: any) => t.content && t.content.trim() && t.content !== '<p><br></p>') && (
+                                <div className="space-y-5 pt-4 mt-2 border-t border-orange-100/50 max-h-64 overflow-y-auto pr-3 custom-scrollbar">
+                                  {day.tags.filter((t: any) => t.title?.trim()).map((tag: any, tagIdx: number) => (
+                                    tag.content && tag.content.trim() && tag.content !== '<p><br></p>' ? (
+                                      <div key={tagIdx}>
+                                        <h5 className="font-bold text-gray-900 text-base mb-2">{tag.title} Experience</h5>
+                                        <p className="text-gray-700 text-sm leading-relaxed break-words">{tag.content}</p>
+                                      </div>
+                                    ) : null
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -454,31 +544,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
               </div>
             </div>
 
-            {/* Why Book With Us - Balanced */}
-            <div id="know-before-you-go" className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-[32px] p-8 md:p-12 text-white relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-               <div className="relative z-10">
-                  <h2 className="font-heading text-2xl md:text-3xl font-bold mb-10 text-white">Know Before You Go</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
-                     {[
-                        { icon: Shield, title: "Verified Local Experts", desc: "Our guides are native to the sacred cities, providing deep local insights." },
-                        { icon: Award, title: "Handpicked Premium Stays", desc: "We personally vet every hotel to ensure luxury and authentic hospitality." },
-                        { icon: Users, title: "Small Group Experience", desc: "Intimate journeys with personalized attention and no overcrowding." },
-                        { icon: Check, title: "No Hidden Costs", desc: "Transparency is our core value. What you see is exactly what you pay." }
-                     ].map((item, idx) => (
-                        <div key={idx} className="flex gap-5">
-                           <div className="w-10 h-10 shrink-0 bg-white/10 rounded-xl flex items-center justify-center border border-white/5">
-                              <item.icon className="text-orange-400" size={20} />
-                           </div>
-                           <div>
-                              <h4 className="font-bold text-lg mb-1">{item.title}</h4>
-                              <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-            </div>
+
 
             {/* Inclusions & Exclusions */}
             <div className="grid md:grid-cols-2 gap-6">
@@ -519,46 +585,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
               </div>
             </div>
 
-            {/* FAQs */}
-            <div id="faq">
-              <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h2>
-              <div className="space-y-4">
-                {pkg.faq.map((f: any, i: number) => (
-                  <div key={i} className="bg-[#fafaf8] border border-gray-100 rounded-2xl p-6 hover:border-gray-200 transition-colors">
-                    <h4 className="font-bold text-gray-900 mb-3 text-lg">{f.q}</h4>
-                    <p className="text-gray-600 text-[15px] leading-relaxed">{f.a}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Premium Trust Badges */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-gray-100">
-               <div className="text-center">
-                  <div className="w-12 h-12 bg-orange-50 text-[hsl(var(--primary))] rounded-full flex items-center justify-center mx-auto mb-3">
-                     <Shield size={24} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-900 uppercase tracking-tighter">Secure Booking</p>
-               </div>
-               <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                     <Award size={24} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-900 uppercase tracking-tighter">Certified Guides</p>
-               </div>
-               <div className="text-center">
-                  <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                     <Star size={24} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-900 uppercase tracking-tighter">Premium Hotels</p>
-               </div>
-               <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                     <ThumbsUp size={24} />
-                  </div>
-                  <p className="text-xs font-bold text-gray-900 uppercase tracking-tighter">24/7 Support</p>
-               </div>
-            </div>
 
           </div>
 
@@ -618,91 +645,268 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
         </div>
       </section>
 
+      {/* ── KNOW BEFORE YOU GO ── */}
+      <section className="py-12 px-6 bg-yellow-50/50 relative overflow-hidden border-t border-yellow-200/40">
+        <div className="absolute top-10 right-1/4 w-72 h-72 bg-yellow-300/10 rounded-full blur-3xl opacity-30"></div>
+        <div className="absolute bottom-5 left-0 w-96 h-96 bg-orange-200/8 rounded-full blur-3xl opacity-25 -ml-48"></div>
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-full bg-white border border-orange-200 shadow-sm flex items-center justify-center text-orange-500">
+               <Info size={24} />
+            </div>
+            <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900">Know Before You Go</h2>
+          </div>
+          
+          <div className="bg-orange-50/70 backdrop-blur-sm rounded-3xl p-6 md:p-8 border border-orange-200/60 shadow-sm space-y-3 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-80 h-80 bg-orange-200/15 rounded-full blur-2xl -mr-40 -mt-20 opacity-40"></div>
+             <div className="absolute bottom-5 left-1/3 w-72 h-72 bg-orange-300/12 rounded-full blur-3xl -ml-40 opacity-35"></div>
+             {(() => {
+                 // Detect real CMS content — filter out empty Quill output
+                 const isQuillEmpty = (s: string) => !s || !s.trim() || s === '<p><br></p>' || s === '<p></p>';
+                 const cmsItems = (pkg.knowBeforeYouGo || []).filter((t: string) => !isQuillEmpty(t));
+                 const items: string[] = cmsItems.length > 0 ? cmsItems : [
+                    "Early morning is the best time for darshan at all major temples. The Mangala Aarti is especially serene and helps you avoid the long queues that build up later in the day. We recommend planning your day to start before sunrise.",
+                    "Weekdays are generally far less crowded than weekends. Major festivals and special religious dates draw the heaviest rush, so if you are seeking a calmer experience, plan your visit during off-peak dates.",
+                    "Carry only essential items and prasad inside the temples. Leave all luggage and large bags in your cab or hotel. Dress modestly in comfortable cotton clothing and carry socks, as you will be walking barefoot on marble floors for extended periods.",
+                    "No photography is allowed inside the inner sanctum of most major temples. Please respect the rules and maintain the sanctity of the premises. If travelling with children or elderly, keep them close as the temple complexes can get very crowded.",
+                    "Our local expert guides will assist you with navigating the narrow lanes and managing VIP darshan passes where applicable. However, a certain amount of walking is unavoidable in these ancient cities, so comfortable footwear is a must."
+                 ];
+                 return items.map((text: string, idx: number) => (
+                    <div key={idx} className="bg-white rounded-2xl p-4 border border-orange-100 flex gap-3 items-start shadow-sm relative z-10 hover:shadow-md transition-shadow">
+                       <div className="w-8 h-8 shrink-0 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-sm mt-0.5">
+                          {idx + 1}
+                       </div>
+                       {text.includes('<') ? (
+                          <div
+                            className="text-gray-600 text-[14px] md:text-[15px] leading-relaxed pt-1 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-800 flex-1 min-w-0 break-words"
+                            dangerouslySetInnerHTML={{ __html: text }}
+                          />
+                       ) : (
+                          <p className="text-gray-600 text-[14px] md:text-[15px] leading-relaxed pt-1 flex-1 min-w-0 break-words">{text}</p>
+                       )}
+                    </div>
+                 ));
+              })()}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY BOOK WITH US (PREMIUM CARDS) ── */}
+      <section className="py-12 px-6 bg-white relative">
+         <div className="container mx-auto max-w-5xl">
+            <div className="text-center mb-10">
+               <h2 className="font-heading text-2xl md:text-4xl font-bold text-gray-900 mb-2">Why Pilgrims Choose Us</h2>
+               <p className="text-gray-500 text-sm md:text-base max-w-2xl mx-auto">Experience the most spiritual journey with our premium, handpicked services.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+               
+               <div className="bg-[#fffcf9] rounded-2xl p-6 border border-[#f0e3ce] hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-orange-500 mb-4 shadow-sm group-hover:scale-105 transition-transform duration-500 group-hover:bg-orange-500 group-hover:text-white">
+                     <Shield size={24} strokeWidth={1.5} />
+                  </div>
+                  <h4 className="font-heading text-lg font-bold text-gray-900 mb-2">100% Secure Booking</h4>
+                  <p className="text-gray-600 leading-relaxed text-sm">Your payments are fully protected with absolute transparency and no hidden costs.</p>
+               </div>
+               
+               <div className="bg-[#f0f7ff] rounded-2xl p-6 border border-[#d6e8ff] hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-blue-500 mb-4 shadow-sm group-hover:scale-105 transition-transform duration-500 group-hover:bg-blue-500 group-hover:text-white">
+                     <Award size={24} strokeWidth={1.5} />
+                  </div>
+                  <h4 className="font-heading text-lg font-bold text-gray-900 mb-2">Certified Local Guides</h4>
+                  <p className="text-gray-600 leading-relaxed text-sm">Native guides providing deep local insights and authentic historical knowledge.</p>
+               </div>
+               
+               <div className="bg-[#f2fbf5] rounded-2xl p-6 border border-[#d3eedb] hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-green-500 mb-4 shadow-sm group-hover:scale-105 transition-transform duration-500 group-hover:bg-green-500 group-hover:text-white">
+                     <Star size={24} strokeWidth={1.5} />
+                  </div>
+                  <h4 className="font-heading text-lg font-bold text-gray-900 mb-2">Handpicked Stays</h4>
+                  <p className="text-gray-600 leading-relaxed text-sm">Personally vetted hotels ensuring luxury, cleanliness, and authentic hospitality.</p>
+               </div>
+               
+               <div className="bg-[#f9f5ff] rounded-2xl p-6 border border-[#eaddff] hover:shadow-lg hover:-translate-y-1 transition-all duration-500 group">
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-purple-500 mb-4 shadow-sm group-hover:scale-105 transition-transform duration-500 group-hover:bg-purple-500 group-hover:text-white">
+                     <ThumbsUp size={24} strokeWidth={1.5} />
+                  </div>
+                  <h4 className="font-heading text-lg font-bold text-gray-900 mb-2">24/7 Dedicated Support</h4>
+                  <p className="text-gray-600 leading-relaxed text-sm">Available around the clock to assist you from booking through your return home.</p>
+               </div>
+
+            </div>
+         </div>
+      </section>
+
+      {/* ── FAQS ── */}
+      <section className="py-20 px-6 bg-[#fafaf8] relative overflow-hidden">
+         <div className="absolute top-1/4 -left-32 w-64 h-64 bg-orange-400/5 rounded-full blur-3xl"></div>
+         <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-yellow-400/5 rounded-full blur-3xl"></div>
+         <div className="container mx-auto max-w-4xl relative z-10">
+            <h2 className="font-heading text-2xl md:text-4xl font-bold text-gray-900 mb-12 text-center">Frequently Asked Questions</h2>
+            <div className="space-y-4">
+              {pkg.faq.map((f: any, i: number) => (
+                <div key={i} className={`group border rounded-[24px] overflow-hidden bg-white transition-all duration-300 ${openFaq === i ? 'border-orange-200 shadow-xl shadow-orange-50/50' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
+                  <button 
+                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between hover:bg-orange-50/10 transition-colors"
+                  >
+                    <h4 className={`font-bold text-lg transition-colors pr-4 ${openFaq === i ? 'text-[hsl(var(--primary))]' : 'text-gray-900'}`}>{f.q}</h4>
+                    <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${openFaq === i ? 'bg-orange-100 text-[hsl(var(--primary))]' : 'bg-gray-50 text-gray-300'}`}>
+                       <ChevronDown className={`transition-transform duration-300 ${openFaq === i ? "rotate-180" : ""}`} size={18} />
+                    </div>
+                  </button>
+                  <div className={`grid transition-all duration-300 ease-in-out ${openFaq === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                      <div className="px-6 pb-6 pt-0">
+                        <p className="text-gray-600 text-[15px] leading-relaxed">{f.a}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+         </div>
+      </section>
+
       {/* ── REVIEWS SECTION (PLAY STORE STYLE) ── */}
-      <section id="customer-reviews" className="py-20 px-6 bg-[#fffcf9]">
+      <section id="customer-reviews" className="py-12 px-6 bg-[#fdf9f5]">
          <div className="container mx-auto">
-            <div className="mb-12">
+            <div className="mb-8">
                <h2 className="font-heading text-2xl md:text-5xl font-bold text-gray-900 text-center md:text-left">What Our Pilgrims Say</h2>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-12 items-start">
                {/* Left: Rating Stats */}
-               <div className="w-full lg:w-[350px] bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                  <h3 className="text-sm font-bold text-orange-600 mb-6 uppercase tracking-wider">Guest Reviews</h3>
-                  <div className="flex items-center gap-6 mb-8">
-                     <span className="text-6xl font-bold text-gray-900 tracking-tighter">{pkg.reviewStats.average}</span>
-                     <div>
-                        <div className="flex gap-1 mb-1">
-                           {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={18} className="text-orange-500 fill-orange-500" />
-                           ))}
+               {pkg.testimonials && pkg.testimonials.length > 0 && (() => {
+                  const displayRating = pkg.rating || 5;
+                  const displayReviewCount = pkg.reviews || pkg.testimonials.length;
+                  return (
+                    <div
+                      className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-100 flex flex-col justify-center"
+                      style={{
+                        width: "min(100%, 326px)",
+                        minWidth: "min(100%, 326px)",
+                        maxWidth: 326,
+                        flex: "0 0 auto",
+                      }}
+                    >
+                      <h3 className="text-sm font-bold text-orange-600 mb-5 uppercase tracking-wider text-center md:text-left">Guest Reviews</h3>
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                          <span className="text-5xl font-bold text-gray-900 tracking-tighter">{displayRating}</span>
+                          <div className="text-center md:text-left">
+                            <div className="flex justify-center md:justify-start gap-1 mb-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} size={20} className={i < Math.round(parseFloat(displayRating as string)) ? "text-orange-500 fill-orange-500" : "text-gray-300"} />
+                              ))}
+                            </div>
+                            <p className="text-gray-500 text-sm font-medium">Based on {displayReviewCount} reviews</p>
+                          </div>
                         </div>
-                        <p className="text-gray-500 text-sm font-medium">Based on {pkg.reviewStats.total}+ reviews</p>
-                     </div>
-                  </div>
-
-                  <div className="space-y-3">
-                     {pkg.reviewStats.distribution.map((item: any, i: number) => (
-                        <div key={i} className="flex items-center gap-4">
-                           <span className="text-xs font-bold text-gray-600 w-2">{item.stars}</span>
-                           <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div 
-                                 className="h-full bg-orange-500 rounded-full transition-all duration-1000" 
-                                 style={{ width: `${item.percentage}%` }}
-                              />
-                           </div>
-                           <span className="text-[10px] font-bold text-gray-400 w-6">{item.percentage}%</span>
+                        <div className="pt-6 border-t border-gray-100 space-y-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 shrink-0">
+                              <Check size={18} strokeWidth={3} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-900 font-bold">100% Verified Guests</p>
+                              <p className="text-[11px] text-gray-500">Real pilgrims only</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                              <ThumbsUp size={18} strokeWidth={3} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-900 font-bold">Highly Recommended</p>
+                              <p className="text-[11px] text-gray-500">Exceptional service</p>
+                            </div>
+                          </div>
                         </div>
-                     ))}
-                  </div>
-               </div>
+                      </div>
+                    </div>
+                  );
+               })()}
+               {(!pkg.testimonials || pkg.testimonials.length === 0) && (
+                 <div
+                   className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100 flex flex-col justify-center text-center md:text-left"
+                   style={{
+                     width: "min(100%, 326px)",
+                     minWidth: "min(100%, 326px)",
+                     maxWidth: 326,
+                     flex: "0 0 auto",
+                   }}
+                 >
+                    <h3 className="text-sm font-bold text-orange-600 mb-6 uppercase tracking-wider">Guest Reviews</h3>
+                    <p className="text-gray-500 text-sm">No reviews yet</p>
+                 </div>
+               )}
 
                <div className="w-full relative min-w-0">
                   <div 
                     ref={scrollRef}
                     onScroll={handleScroll}
                     onPointerDown={handleUserInteraction}
-                    className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 pt-4 hide-scrollbar px-2 overscroll-x-contain"
+                    className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-6 pt-2 hide-scrollbar px-2 overscroll-x-contain"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   >
-                     {pkg.testimonials.map((t: any, i: number) => (
-                        <div 
-                          key={i} 
-                          className="snap-start w-[280px] min-w-[280px] sm:w-[320px] sm:min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-3xl p-6 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex-shrink-0 flex flex-col group relative"
-                        >
-                           <div className="absolute top-8 right-8 text-orange-500/5 group-hover:text-orange-500/10 transition-colors">
-                              <ThumbsUp size={80} strokeWidth={1} />
-                           </div>
-                           
-                           <div className="flex items-center justify-between mb-8 relative z-10">
+                     {pkg.testimonials && pkg.testimonials.length > 0 ? (
+                        pkg.testimonials.map((t: any, i: number) => (
+                          <div 
+                            key={i} 
+                            className="snap-start w-[280px] min-w-[280px] sm:w-[320px] sm:min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex-shrink-0 flex flex-col group relative"
+                          >
+                            <div className="absolute top-5 right-5 text-orange-500/5 group-hover:text-orange-500/10 transition-colors">
+                              <ThumbsUp size={50} strokeWidth={1} />
+                            </div>
+                            
+                            <div className="flex items-center justify-between mb-6 relative z-10">
                               <div className="flex items-center gap-5">
-                                 <div className="w-14 h-14 rounded-2xl bg-gray-900 flex items-center justify-center text-white font-bold text-xl shadow-xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                                    {t.avatar}
-                                 </div>
-                                 <div>
-                                    <h4 className="font-bold text-gray-900 text-lg">{t.name}</h4>
-                                    <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">{t.location}</p>
-                                 </div>
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold text-xl shadow-xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                                  {t.avatar || 'G'}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-gray-900 text-lg">{t.name}</h4>
+                                  <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.2em] mt-1">Verified Guest</p>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[#00b67a] font-bold text-sm bg-[#00b67a]/10 px-4 py-1.5 rounded-full ring-1 ring-[#00b67a]/20">
-                                 ★ {t.rating}
+                              <div className="flex items-center gap-1.5 text-orange-600 font-bold text-sm bg-orange-50 px-4 py-1.5 rounded-full ring-1 ring-orange-200">
+                                ★ {t.rating || 5}
                               </div>
-                           </div>
+                            </div>
 
-                           <div className="relative z-10">
-                              <p className="text-gray-600 text-[15px] md:text-base leading-relaxed mb-6 font-medium italic">
-                                 &quot;{t.text}&quot;
-                              </p>
-                              <div className="flex items-center gap-2 text-gray-900 font-bold text-sm hover:text-[hsl(var(--primary))] transition-colors cursor-pointer group/read">
-                                 <span>Read Full Story</span>
-                                 <ArrowRight size={14} className="group-hover/read:translate-x-1 transition-transform" />
+                            <div className="relative z-10">
+                              <style>{`
+                                .testimonial-review h1 { font-size: 1.25rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                                .testimonial-review h2 { font-size: 1.125rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                                .testimonial-review h3 { font-size: 1rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                                .testimonial-review p { color: #4b5563; line-height: 1.6; margin: 0; }
+                                .testimonial-review strong { font-weight: 600; color: #1f2937; }
+                                .testimonial-review em { font-style: italic; }
+                                .testimonial-review ul, .testimonial-review ol { margin-left: 1.5rem; margin: 0.5rem 0; }
+                                .testimonial-review li { margin-bottom: 0.25rem; }
+                              `}</style>
+                              <div className="text-gray-600 text-[15px] md:text-base leading-relaxed mb-0 font-medium italic break-words min-w-0">
+                                &quot;
+                                {t.review && t.review.includes('<') ? (
+                                  <div className="testimonial-review break-words inline" dangerouslySetInnerHTML={{ __html: t.review }} />
+                                ) : (
+                                  <span className="break-words">{t.review || ''}</span>
+                                )}
+                                &quot;
                               </div>
-                           </div>
+                            </div>
+                          </div>
+                        ))
+                     ) : (
+                        <div className="w-full text-center py-12">
+                          <p className="text-gray-500 text-base">No testimonials available yet</p>
                         </div>
-                     ))}
+                     )}
                   </div>
                   
                   {/* Carousel Controls */}
+                  {pkg.testimonials && pkg.testimonials.length > 1 && (
                   <div className="flex items-center gap-6 mt-10 justify-center md:justify-start">
                      <div className="flex gap-3">
                         <button 
@@ -738,7 +942,140 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                         ))}
                      </div>
                   </div>
+                  )}
                </div>
+            </div>
+         </div>
+      </section>
+
+      {/* ── GROUND TRUTH SECTION ── */}
+      <section className="py-12 px-6 bg-gradient-to-b from-[#fdf9f5] via-[#faf7f2] to-[#f5f2ed] relative overflow-hidden border-t border-gray-200/40">
+        <div className="absolute top-20 right-0 w-96 h-96 bg-white/40 rounded-full blur-2xl opacity-20 -mr-48"></div>
+        <div className="absolute bottom-10 left-1/3 w-80 h-80 bg-orange-300/5 rounded-full blur-3xl opacity-30 -ml-40"></div>
+        <div className="container mx-auto max-w-4xl relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg flex items-center justify-center text-white flex-shrink-0">
+              <Info size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900">Ayodhya & Varanasi — Ground Truth</h2>
+              <p className="text-gray-600 text-xs md:text-sm">What travel guides don't tell you before you arrive</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            {(() => {
+              const isQuillEmpty = (s: string) => !s || !s.trim() || s === '<p><br></p>' || s === '<p></p>';
+              const cmsItems = (pkg.groundTruth || []).filter((g: any) => g.title && g.title.trim());
+              const items = cmsItems.length > 0 ? cmsItems : [
+                { title: "Ram Mandir Closures & Timing", description: "Inner sanctum sometimes closes during afternoon prayers. VIP darshan passes bypass main queues that stretch 2-3 hours, especially weekends and festivals." },
+                { title: "Varanasi Ghat Timing & Reality", description: "Arrive 30-45 min early for good Aarti viewing spots. Morning 'Subah-e-Banaras' boat rides (4:30-6:30 AM) offer peaceful experience with fewer crowds." },
+                { title: "Physical Demands & Walking", description: "Significant walking on narrow, uneven lanes with steep stairs. Comfortable, broken-in footwear is essential. Inform us of mobility issues in advance for alternative routes." },
+                { title: "Temple Photography & Protocols", description: "Photography forbidden inside sanctums. Shoulders and knees must be covered. Barefoot walking on marble floors mandatory—socks help. Women sometimes redirected during ceremonies." },
+                { title: "Crowd Patterns & Best Times", description: "Early mornings (5-7 AM) are most peaceful. Weekdays less crowded than weekends. Avoid full moon nights and festival dates. October-November: ideal weather and manageable crowds." },
+                { title: "Health & Hygiene", description: "Carry bottled water. Street food high-risk; we provide vetted meals. Never drink Ganga water. Pack insect repellent. Medications and first-aid supplies essential." },
+                { title: "Additional Costs Not Always Included", description: "Temple donations (₹11-501 per temple), boat tips (₹100-300), guide gratuities, and shop purchases are personal. These add authenticity but are optional." },
+                { title: "Weather & Packing", description: "Winter: Light layers (10-30°C). Summer: Extreme heat (40°C+), sunscreen essential. Monsoon: Humid, umbrella helpful. Pack: walking shoes, modest clothing, sunglasses, towel, medications." }
+              ];
+              return items.map((item: any, idx: number) => (
+              <div key={idx} className="group bg-white/85 backdrop-blur-sm rounded-xl p-5 border border-orange-300/40 hover:border-orange-400/60 shadow-sm hover:shadow-lg hover:shadow-orange-200/50 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex gap-4 items-start">
+                  <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center font-bold text-sm shadow-md group-hover:scale-110 transition-transform duration-300">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {typeof item === 'string' ? (
+                      <p className="text-gray-700 text-sm leading-relaxed break-words">{item}</p>
+                    ) : (
+                      <>
+                        <h4 className="font-heading text-base font-bold text-gray-900 mb-1.5 leading-tight group-hover:text-orange-700 transition-colors">
+                          {item.title}
+                        </h4>
+                        <style>{`
+                          .ground-truth-description h1 { font-size: 1.125rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                          .ground-truth-description h2 { font-size: 1rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                          .ground-truth-description h3 { font-size: 0.95rem; font-weight: bold; margin: 0.5rem 0; color: #111827; }
+                          .ground-truth-description p { color: #4b5563; line-height: 1.6; margin: 0; }
+                          .ground-truth-description strong { font-weight: 600; color: #1f2937; }
+                          .ground-truth-description em { font-style: italic; }
+                          .ground-truth-description ul, .ground-truth-description ol { margin-left: 1.5rem; margin: 0.5rem 0; }
+                          .ground-truth-description li { margin-bottom: 0.25rem; }
+                        `}</style>
+                        <div className="ground-truth-description text-gray-700 text-sm leading-relaxed break-words">
+                          {item.description && item.description.includes('<') ? (
+                            <div className="break-words" dangerouslySetInnerHTML={{ __html: item.description }} />
+                          ) : (
+                            <p className="break-words">{item.description}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              ));
+            })()}
+          </div>
+
+          <div className="mt-8 p-5 bg-white/70 backdrop-blur-md rounded-xl border-2 border-orange-300/50 shadow-md hover:shadow-lg transition-shadow duration-300">
+            <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
+              <span className="font-bold text-orange-700">💡 Pro Tip:</span> Our local guides know all these nuances intimately. They'll navigate crowds, optimize timing, handle protocols, and share stories textbooks miss.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── POLICIES ── */}
+      <section className="py-16 px-6 bg-white border-t border-gray-100">
+         <div className="container mx-auto max-w-4xl">
+            <h2 className="font-heading text-2xl md:text-4xl font-bold text-gray-900 mb-2 text-center">Policies & Important Information</h2>
+            <p className="text-gray-600 mb-10 text-[15px] text-center">Please review the following policies carefully before confirming your Mathura-Vrindavan yatra.</p>
+            <div className="space-y-4">
+              {[
+                {
+                  icon: RotateCcw,
+                  title: "Refund",
+                  content: "Processing Time: Approved refunds will be processed within 7 to 10 working days via the original payment method. Force Majeure: If a tour is cancelled by Ayoredesigndhya Varanasi Guide due to unforeseen circumstances (extreme weather, government restrictions, or vehicle breakdown), a 100% refund or an alternative date will be offered. Unused Services: No refunds will be provided for any part of the sightseeing missed by the guest due to late arrival or personal choice during the tour."
+                },
+                {
+                  icon: Ban,
+                  title: "Cancel",
+                  content: "We understand that travel plans can change. Our cancellation slabs are as follows: 48 Hours or More before the tour: Full Refund of the advance amount (minus a small 5% processing fee/bank charges). 24 to 48 Hours before the tour: 50% of the advance amount will be refunded. Less than 24 Hours or No Show: No refund will be provided as the vehicle and driver are already blocked for your service. Peak Dates: For bookings during major festivals like Holi, Janmashtami, or Radha Ashtami, all advance payments are Non-Refundable due to extreme demand."
+                },
+                {
+                  icon: CreditCard,
+                  title: "Payment",
+                  content: "To provide competitive local pricing while maintaining high service standards, we follow a split-payment structure: Advance Deposit: A 50% advance payment of the total package cost is required to process the booking. Balance Amount: The remaining balance must be paid to the coordinator or driver upon arrival or at the start of the tour. Mode of Payment: We accept UPI (Google Pay, PhonePe, Paytm), Bank Transfers, and Cash. Exclusions: Please note that E-Rickshaw charges (for narrow lanes near Banke Bihari Temple), Guide fees, and Temple donations are typically not included in the package and should be paid directly in cash."
+                },
+                {
+                  icon: CheckCircle,
+                  title: "Confirmation",
+                  content: "We want to ensure your spot is secured so you don't miss the divine Darshan timings. Booking Confirmation: A booking is considered \"Confirmed\" only after the receipt of the initial advance payment. Voucher Issuance: Once the payment is verified, we will issue a Digital Confirmation Voucher via WhatsApp/Email containing your driver details, vehicle number, and reporting time. Reporting Time: For Same Day Tours, guests are expected to report at the designated pickup point (Hotel/Railway Station) at the scheduled time. A maximum waiting period of 30 minutes is allowed, after which the tour may be treated as a \"No Show.\""
+                }
+              ].map((policy, i) => (
+                <div key={i} className={`group border rounded-[24px] overflow-hidden transition-all duration-300 ${openPolicy === i ? 'border-[#ffd485] bg-[#fffdf5]' : 'border-gray-100 bg-white shadow-sm hover:border-gray-200'}`}>
+                  <button 
+                    onClick={() => setOpenPolicy(openPolicy === i ? -1 : i)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between transition-colors hover:bg-orange-50/30"
+                  >
+                    <div className="flex items-center gap-4">
+                      <policy.icon className="text-orange-500" size={20} />
+                      <h4 className="font-bold text-lg text-gray-900">{policy.title}</h4>
+                    </div>
+                    <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 text-orange-400">
+                       <ChevronDown className={`transition-transform duration-300 ${openPolicy === i ? "rotate-180" : ""}`} size={18} />
+                    </div>
+                  </button>
+                  <div className={`grid transition-all duration-300 ease-in-out ${openPolicy === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                    <div className="overflow-hidden">
+                      <div className="px-6 pb-6 pt-1">
+                        <hr className="border-t border-[#f0e3ce] mb-5" />
+                        <p className="text-gray-600 text-[15px] leading-relaxed">{policy.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
          </div>
       </section>

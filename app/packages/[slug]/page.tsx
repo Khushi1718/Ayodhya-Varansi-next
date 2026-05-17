@@ -135,6 +135,11 @@ async function getPackage(slug: string) {
       included: pkg.inclusions || pkg.included || dummyPackage.included,
       excluded: pkg.exclusions || pkg.excluded || dummyPackage.excluded,
       faq: pkg.faqs || pkg.faq || dummyPackage.faq,
+      // Explicitly pass CMS-authored sections (never override with dummy)
+      knowBeforeYouGo: pkg.knowBeforeYouGo || [],
+      groundTruth: pkg.groundTruth || [],
+      testimonials: pkg.testimonials || dummyPackage.testimonials,
+      cardKeyPoints: pkg.cardKeyPoints || [],
     };
   } catch (error) {
     console.error("Error fetching package:", error);

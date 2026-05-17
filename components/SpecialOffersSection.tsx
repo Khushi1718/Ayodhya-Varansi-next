@@ -228,14 +228,15 @@ const SpecialOffersSection = ({
             onMouseEnter={() => { if (timer.current) clearInterval(timer.current); }}
             onMouseLeave={startAutoRotate}
           >
-            {offers.map((p) => {
+            {offers.map((p, packageIndex) => {
               const imageSrc = p.images?.main || p.image || "https://placehold.co/800x450/f3f4f6/9ca3af?text=Offer+Package";
+              const cardTag = p.tag || p.destination || "Offer";
               return (
-                <div key={p.id || p.slug} className="ps-card">
+                <div key={`offer-package-${packageIndex}`} className="ps-card">
                   <div className="ps-card-image">
                     <Image src={imageSrc} alt={p.title} fill sizes="(max-width: 768px) 300px, 360px" />
                     <div className="ps-card-overlay" />
-                    <span className="ps-card-tag">{p.tag}</span>
+                    <span className="ps-card-tag">{cardTag}</span>
                     
                     {/* OFFER TAG */}
                     <div className="ps-card-offer-tag">
@@ -260,8 +261,8 @@ const SpecialOffersSection = ({
                     </div>
 
                     <div className="ps-card-highlights">
-                      {p.highlights?.map((h: string) => (
-                        <div key={h} className="ps-card-highlight-item">
+                      {p.highlights?.map((h: string, highlightIndex: number) => (
+                        <div key={`offer-${packageIndex}-highlight-${highlightIndex}`} className="ps-card-highlight-item">
                           <span className="ps-card-highlight-dot" />
                           {h}
                         </div>

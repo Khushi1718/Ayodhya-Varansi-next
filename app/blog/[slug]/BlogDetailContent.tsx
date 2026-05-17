@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Clock, Share2, Link2, Compass, MessageCircle, Mail, MapPin } from "lucide-react";
+import { useModal } from "@/lib/ModalContext";
 // Force Refresh: v2.1.0 - purging legacy static fields
 export default function BlogDetailContent({ blog, relatedBlogs }: { blog: any, relatedBlogs: any[] }) {
+  const { openEnquiry } = useModal();
+
   const handleShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
@@ -251,12 +254,13 @@ export default function BlogDetailContent({ blog, relatedBlogs }: { blog: any, r
                     Let our specialists craft your perfect spiritual retreat — tailored to your soul's calling.
                   </p>
                   <div className="flex flex-col gap-3">
-                    <Link
-                      href="/contact"
+                    <button
+                      type="button"
+                      onClick={openEnquiry}
                       className="w-full h-12 bg-gray-900 hover:bg-black text-white text-[12px] font-bold rounded-xl transition-all uppercase tracking-[0.15em] shadow-md hover:shadow-xl active:scale-[0.98] flex items-center justify-center"
                     >
                       Enquire Now
-                    </Link>
+                    </button>
                     <a
                       href="tel:+917302265809"
                       className="w-full h-12 bg-orange-50 hover:bg-orange-500 border border-orange-100 hover:border-orange-500 text-orange-600 hover:text-white text-[12px] font-bold rounded-xl transition-all uppercase tracking-[0.15em] text-center flex items-center justify-center active:scale-[0.98]"

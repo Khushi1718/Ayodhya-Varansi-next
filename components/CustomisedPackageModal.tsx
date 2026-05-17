@@ -3,7 +3,6 @@ import { useState } from "react";
 import { DialogDescription } from "@/components/ui/dialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
 
@@ -50,7 +49,7 @@ const CustomisedPackageModal = ({ open, onOpenChange }: CustomisedPackageModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 border-none bg-white/95 backdrop-blur-xl rounded-[28px] overflow-hidden max-w-[92%] sm:max-w-[420px] shadow-[0_25px_50px_-12px_rgba(38,38,38,0.1)]">
+      <DialogContent hideCloseButton className="p-0 border-none bg-white/95 backdrop-blur-xl rounded-[28px] overflow-hidden max-w-[92%] sm:max-w-[420px] shadow-[0_25px_50px_-12px_rgba(38,38,38,0.1)]">
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[hsl(var(--primary))] via-[hsl(var(--gold))] to-[hsl(var(--primary))]"></div>
 
         <div className="relative p-7 sm:p-9 pt-10">

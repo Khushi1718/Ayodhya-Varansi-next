@@ -19,6 +19,7 @@ async function getPackages() {
       destination: pkg.destination,
       duration: pkg.duration,
       durationCategory: pkg.durationCategory,
+      cardKeyPoints: Array.isArray(pkg.cardKeyPoints) ? pkg.cardKeyPoints : [],
       highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
       rating: pkg.rating || 5.0,
       slug: pkg.slug || pkg.id

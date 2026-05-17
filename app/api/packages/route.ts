@@ -29,6 +29,7 @@ export async function GET() {
             isOffer: 1,
             offerPercentage: 1,
             status: 1,
+            cardKeyPoints: 1,
             createdAt: 1,
           },
         }

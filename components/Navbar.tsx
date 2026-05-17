@@ -5,6 +5,7 @@ import { Menu, X, Phone, ChevronDown, ArrowRight, MapPin, Clock, Star, BookOpen 
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { useModal } from "@/lib/ModalContext";
 
 const CustomisedPackageModal = dynamic(() => import("@/components/CustomisedPackageModal"), { ssr: false });
 
@@ -72,6 +73,7 @@ function MegaShell({ visible, width, children }: { visible: boolean; width: numb
 
 /* ── Packages Mega Menu ───────────────────────────────────────── */
 function PackagesMega({ visible }: { visible: boolean }) {
+  const { openEnquiry } = useModal();
   const [packages, setPackages] = useState<any[]>([]);
   const [hasFetched, setHasFetched] = useState(false);
   const [activeFilter, setActiveFilter] = useState<{ type: 'duration' | 'city' | 'all', value: string, label: string }>({ type: 'all', value: 'all', label: 'All Packages' });
@@ -269,7 +271,10 @@ function PackagesMega({ visible }: { visible: boolean }) {
                         color: "hsl(var(--foreground))", background: "#fff", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",
                         position: "relative", overflow: "hidden"
                       }} className="mega-btn-sec">Details</Link>
-                      <button style={{ 
+                      <button
+                        type="button"
+                        onClick={openEnquiry}
+                        style={{ 
                         flex: 1, fontSize: 10, fontWeight: 700, 
                         padding: "8px 0", borderRadius: 7, 
                         color: "#fff", background: "hsl(var(--primary))", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",

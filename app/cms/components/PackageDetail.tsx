@@ -10,10 +10,79 @@ import {
   HelpCircle, Calendar, Star, Info, Share2, ThumbsUp, ChevronDown,
   Award, Shield, Phone, Mail, Sparkles, Layout, FileText
 } from 'lucide-react';
-import { Package, PackageDetailProps, ItineraryDay, FAQ } from './types';
+import { Package, PackageDetailProps, ItineraryDay, FAQ, GroundTruth, Testimonial } from './types';
 import { uploadImageToCloudinary } from '@/lib/cloudinaryUpload';
+import dynamic from 'next/dynamic';
+import 'react-quill-new/dist/quill.snow.css';
+
+// ── Register custom PillBlot before any Quill instance renders ──
+const ReactQuill = dynamic(
+  async () => {
+    const { default: RQ, Quill } = await import('react-quill-new');
+
+    if (!Quill.imports['formats/pill']) {
+      const Embed = Quill.import('blots/embed') as any;
+      class PillBlot extends Embed {
+        static create(value: string) {
+          const node = super.create() as HTMLElement;
+          node.textContent = value;
+          node.setAttribute('data-value', value);
+          node.setAttribute('contenteditable', 'false');
+          node.title = 'Click × to delete this tag';
+          return node;
+        }
+        static value(node: HTMLElement) {
+          return node.getAttribute('data-value') || node.textContent || '';
+        }
+      }
+      PillBlot.blotName = 'pill';
+      PillBlot.tagName = 'span';
+      PillBlot.className = 'itinerary-pill-tag';
+      Quill.register(PillBlot, true);
+    }
+    return RQ;
+  },
+  {
+    ssr: false,
+    loading: () => <div className="h-40 bg-gray-50 animate-pulse rounded-2xl flex items-center justify-center text-gray-400 font-medium">Loading Editor...</div>,
+  }
+);
+
+// Pill toolbar handler — inserts a pill embed at cursor
+const pillHandler = function (this: any) {
+  const label = window.prompt('Enter tag/chip label (e.g. Gokul Temples):');
+  if (label && label.trim()) {
+    const quill = this.quill;
+    const range = quill.getSelection(true);
+    const idx = range ? range.index : quill.getLength();
+    quill.insertEmbed(idx, 'pill', label.trim(), 'user');
+    quill.setSelection(idx + 1, 0);
+  }
+};
+
+// Shared modules for the itinerary rich-text editor
+const itineraryModules = {
+  toolbar: {
+    container: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link', 'image'],
+      ['pill'],
+      ['clean'],
+    ],
+    handlers: { pill: pillHandler },
+  },
+};
 
 const API_BASE = "/api";
+
+type PackageForm = Omit<Package, 'id' | 'slug' | 'knowBeforeYouGo' | 'groundTruth' | 'testimonials' | 'cardKeyPoints'> & {
+  cardKeyPoints: string[];
+  knowBeforeYouGo: string[];
+  groundTruth: GroundTruth[];
+  testimonials: Testimonial[];
+};
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
   const [loading, setLoading] = useState(false);
@@ -26,7 +95,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const galleryImageInputRef = useRef<HTMLInputElement>(null);
 
-  const initialFormState: Omit<Package, 'id' | 'slug'> = {
+  const initialFormState: PackageForm = {
     title: '',
     destination: '',
     duration: '',
@@ -38,7 +107,8 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     savings: '',
     about: '',
     highlights: [''],
-    itinerary: [{ day: 'Day 1', title: '', desc: '' }],
+    cardKeyPoints: ['', '', ''],
+    itinerary: [{ day: 'Day 1', title: '', details: '', tags: [] }],
     included: [''],
     excluded: [''],
     faq: [{ q: '', a: '' }],
@@ -48,7 +118,10 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     },
     isOffer: false,
     offerPercentage: '10% OFF',
-    status: 'published'
+    status: 'published',
+    knowBeforeYouGo: [''],
+    groundTruth: [{ title: '', description: '' }],
+    testimonials: [{ name: '', rating: 5, review: '', avatar: '' }]
   };
 
   const [form, setForm] = useState(initialFormState);
@@ -59,7 +132,13 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         ...initialFormState,
         ...initialPackage,
         highlights: initialPackage.highlights || [''],
-        itinerary: initialPackage.itinerary || [{ day: 'Day 1', title: '', desc: '' }],
+        cardKeyPoints: initialPackage.cardKeyPoints || ['', '', ''],
+        itinerary: initialPackage.itinerary?.map(day => ({
+          day: day.day,
+          title: day.title,
+          details: day.details || '',
+          tags: day.tags || []
+        })) || [{ day: 'Day 1', title: '', details: '', tags: [] }],
         included: initialPackage.included || [''],
         excluded: initialPackage.excluded || [''],
         faq: initialPackage.faq || [{ q: '', a: '' }],
@@ -69,7 +148,12 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         },
         isOffer: initialPackage.isOffer || false,
         offerPercentage: initialPackage.offerPercentage || '10% OFF',
-        status: initialPackage.status || 'published'
+        status: initialPackage.status || 'published',
+        knowBeforeYouGo: initialPackage.knowBeforeYouGo || [''],
+        groundTruth: initialPackage.groundTruth && initialPackage.groundTruth.length > 0 
+          ? initialPackage.groundTruth 
+          : [{ title: '', description: '' }],
+        testimonials: initialPackage.testimonials || [{ name: '', rating: 5, review: '', avatar: '' }]
       });
     } else {
       setForm(initialFormState);
@@ -82,17 +166,17 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleArrayChange = (index: number, value: string, field: 'highlights' | 'included' | 'excluded') => {
+  const handleArrayChange = (index: number, value: string, field: 'highlights' | 'included' | 'excluded' | 'knowBeforeYouGo') => {
     const newArray = [...form[field]];
     newArray[index] = value;
     setForm(prev => ({ ...prev, [field]: newArray }));
   };
 
-  const addArrayItem = (field: 'highlights' | 'included' | 'excluded') => {
+  const addArrayItem = (field: 'highlights' | 'included' | 'excluded' | 'knowBeforeYouGo') => {
     setForm(prev => ({ ...prev, [field]: [...prev[field], ''] }));
   };
 
-  const removeArrayItem = (index: number, field: 'highlights' | 'included' | 'excluded') => {
+  const removeArrayItem = (index: number, field: 'highlights' | 'included' | 'excluded' | 'knowBeforeYouGo') => {
     const newArray = form[field].filter((_, i) => i !== index);
     setForm(prev => ({ ...prev, [field]: newArray.length ? newArray : [''] }));
   };
@@ -103,18 +187,58 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     setForm(prev => ({ ...prev, itinerary: newItinerary }));
   };
 
+
   const addItineraryDay = () => {
     const nextDayNum = form.itinerary.length + 1;
     setForm(prev => ({ 
       ...prev, 
-      itinerary: [...prev.itinerary, { day: `Day ${nextDayNum}`, title: '', desc: '' }] 
+      itinerary: [...prev.itinerary, { day: `Day ${nextDayNum}`, title: '', details: '', tags: [] }] 
     }));
   };
 
   const removeItineraryDay = (index: number) => {
     const newItinerary = form.itinerary.filter((_, i) => i !== index)
       .map((day, i) => ({ ...day, day: `Day ${i + 1}` }));
-    setForm(prev => ({ ...prev, itinerary: newItinerary.length ? newItinerary : [{ day: 'Day 1', title: '', desc: '' }] }));
+    setForm(prev => ({ ...prev, itinerary: newItinerary.length ? newItinerary : [{ day: 'Day 1', title: '', details: '', tags: [] }] }));
+  };
+
+  const handleTestimonialChange = (index: number, field: keyof Testimonial, value: string | number) => {
+    const newTestimonials = [...form.testimonials!];
+    newTestimonials[index] = { ...newTestimonials[index], [field]: value };
+    setForm(prev => ({ ...prev, testimonials: newTestimonials }));
+  };
+
+  const addTestimonial = () => {
+    setForm(prev => ({ 
+      ...prev, 
+      testimonials: [...(prev.testimonials || []), { name: '', rating: 5, review: '', avatar: '' }] 
+    }));
+  };
+
+  const removeTestimonial = (index: number) => {
+    const newTestimonials = form.testimonials!.filter((_, i) => i !== index);
+    setForm(prev => ({ ...prev, testimonials: newTestimonials.length ? newTestimonials : [{ name: '', rating: 5, review: '', avatar: '' }] }));
+  };
+
+  const handleGroundTruthChange = (index: number, field: 'title' | 'description', value: string) => {
+    const newGroundTruth = [...(form.groundTruth || [])];
+    if (!newGroundTruth[index]) {
+      newGroundTruth[index] = { title: '', description: '' };
+    }
+    newGroundTruth[index] = { ...newGroundTruth[index], [field]: value };
+    setForm(prev => ({ ...prev, groundTruth: newGroundTruth }));
+  };
+
+  const addGroundTruth = () => {
+    setForm(prev => ({ 
+      ...prev, 
+      groundTruth: [...(prev.groundTruth || []), { title: '', description: '' }] 
+    }));
+  };
+
+  const removeGroundTruth = (index: number) => {
+    const newGroundTruth = (form.groundTruth || []).filter((_, i) => i !== index);
+    setForm(prev => ({ ...prev, groundTruth: newGroundTruth.length ? newGroundTruth : [{ title: '', description: '' }] }));
   };
 
   const handleFAQChange = (index: number, field: keyof FAQ, value: string) => {
@@ -180,8 +304,9 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         savings: form.savings,
         about: form.about,
         status: isDraft ? 'draft' : 'published',
-        highlights: form.highlights.filter(h => h.trim()).length > 0 
-          ? form.highlights.filter(h => h.trim()) 
+        cardKeyPoints: form.cardKeyPoints.filter((k: string) => k.trim()).slice(0, 3),
+        highlights: form.highlights.filter(h => h && h.trim() && h !== '<p><br></p>').length > 0
+          ? form.highlights.filter(h => h && h.trim() && h !== '<p><br></p>')
           : [''],
         included: form.included.filter(h => h.trim()).length > 0 
           ? form.included.filter(h => h.trim()) 
@@ -189,13 +314,27 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         excluded: form.excluded.filter(h => h.trim()).length > 0 
           ? form.excluded.filter(h => h.trim()) 
           : [''],
+        knowBeforeYouGo: form.knowBeforeYouGo.filter(h => h.trim()).length > 0 
+          ? form.knowBeforeYouGo.filter(h => h.trim()) 
+          : [''],
+        groundTruth: (form.groundTruth || []).filter(g => g.title && g.title.trim()).length > 0 
+          ? (form.groundTruth || []).filter(g => g.title && g.title.trim())
+          : [{ title: '', description: '' }],
         faq: form.faq.filter(f => f.q.trim() && f.a.trim()),
-        itinerary: form.itinerary.filter(d => d.title.trim() && d.desc.trim()).length > 0
-          ? form.itinerary.filter(d => d.title.trim() && d.desc.trim())
-          : [{ day: 'Day 1', title: '', desc: '' }],
+        itinerary: form.itinerary.filter(d => d.title.trim()).length > 0
+          ? form.itinerary.filter(d => d.title.trim()).map(d => ({
+              day: d.day,
+              title: d.title,
+              details: d.details || '',
+              tags: (d.tags || []).filter(t => t.title.trim() || t.content.trim())
+            }))
+          : [{ day: 'Day 1', title: '', details: '', tags: [] }],
         images: form.images,
         isOffer: form.isOffer,
-        offerPercentage: form.offerPercentage
+        offerPercentage: form.offerPercentage,
+        testimonials: form.testimonials!.filter(t => t.name.trim() && t.review.trim()).length > 0
+          ? form.testimonials!.filter(t => t.name.trim() && t.review.trim())
+          : [{ name: '', rating: 5, review: '', avatar: '' }]
       };
 
       // Use id if available, otherwise use _id (MongoDB ID)
@@ -440,6 +579,26 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                     </Button>
                   </div>
                 </div>
+                {/* Card Key Points — 3 bullet points shown on the listing card */}
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Card Key Points (3 bullets shown on listing card)</label>
+                  <p className="text-[9px] text-orange-500 font-medium mb-3">These appear as the 3 orange-dot bullet points on the package card in the listings page</p>
+                  <div className="space-y-2">
+                    {[0, 1, 2].map((i) => (
+                      <Input
+                        key={i}
+                        value={form.cardKeyPoints?.[i] || ''}
+                        onChange={(e) => {
+                          const kp = [...(form.cardKeyPoints || ['', '', ''])];
+                          kp[i] = e.target.value;
+                          setForm(prev => ({ ...prev, cardKeyPoints: kp }));
+                        }}
+                        placeholder={["e.g. VIP Darshan at Ram Mandir", "e.g. Private boat ride at Ganga Aarti", "e.g. Heritage hotel stays included"][i]}
+                        className="h-11 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all text-sm"
+                      />
+                    ))}
+                  </div>
+                </div>
 
 
               </div>
@@ -463,13 +622,22 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
               <div className="space-y-6">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">About the Journey</label>
-                  <Textarea
-                    name="about"
-                    value={form.about}
-                    onChange={handleChange}
-                    placeholder="Describe the soul of this spiritual journey..."
-                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all min-h-[160px] leading-relaxed"
-                  />
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <ReactQuill
+                      value={form.about}
+                      onChange={(content) => setForm(prev => ({ ...prev, about: content }))}
+                      theme="snow"
+                      modules={{
+                        toolbar: [
+                          [{ header: [1, 2, 3, false] }],
+                          ['bold', 'italic', 'underline'],
+                          [{ list: 'ordered' }, { list: 'bullet' }],
+                          ['link'],
+                          ['clean'],
+                        ],
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Itinerary */}
@@ -480,32 +648,72 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                       <Plus className="w-3 h-3 mr-1" /> Add Day
                     </Button>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {form.itinerary.map((day, idx) => (
-                      <div key={idx} className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100 space-y-4 relative group">
+                      <div key={idx} className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100 space-y-6 relative group">
                         <button type="button" onClick={() => removeItineraryDay(idx)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
+                        
+                        {/* Day Title */}
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-bold text-orange-500 border border-orange-100 shadow-sm shrink-0">{idx + 1}</div>
                           <Input value={day.title} onChange={(e) => handleItineraryChange(idx, 'title', e.target.value)} placeholder="Day Title (e.g. Arrival & Evening Aarti)" className="h-12 rounded-2xl border-white focus:bg-white shadow-sm" />
                         </div>
-                        <Textarea value={day.desc} onChange={(e) => handleItineraryChange(idx, 'desc', e.target.value)} placeholder="What happens on this day?" className="rounded-2xl border-white focus:bg-white shadow-sm min-h-[100px]" />
+
+                        {/* Rich Text Editor for Details — includes pill tag insertion */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Detailed Description</label>
+                            <span className="text-[9px] text-orange-500 font-medium">Use the <strong>⬟Tag</strong> button in toolbar to insert inline pill chips</span>
+                          </div>
+                          {/* Pill button icon CSS */}
+                          <style>{`
+                            .ql-pill::before { content: '⬟ Tag'; font-size: 10px; font-weight: 700; color: #c2410c; }
+                            .ql-snow .ql-toolbar .ql-pill { padding: 1px 8px; border: 1px solid #fed7aa !important; border-radius: 999px; background: #fff7ed; height: 22px; display: inline-flex; align-items: center; }
+                            .ql-snow .ql-toolbar .ql-pill:hover { background: #ffedd5; }
+                            .ql-editor .itinerary-pill-tag { display: inline-flex; align-items: center; padding: 2px 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 9999px; font-size: 11px; font-weight: 700; margin: 0 3px; cursor: default; user-select: none; vertical-align: middle; }
+                          `}</style>
+                          <div className="bg-white rounded-2xl border border-white shadow-sm overflow-hidden">
+                            <ReactQuill
+                              value={day.details || ''}
+                              onChange={(content) => handleItineraryChange(idx, 'details', content)}
+                              theme="snow"
+                              modules={itineraryModules}
+                            />
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Array Sections: Highlights, Included, Excluded */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {/* Highlights */}
+                {/* Array Sections: Highlights, Included, Excluded, FAQ */}
+                <div className="space-y-8">
+                  {/* Highlights — rich text editors */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Highlights</label>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Highlights</label>
+                        <p className="text-[9px] text-gray-400 mt-0.5">Shown as feature bullets on the package detail page</p>
+                      </div>
                       <button type="button" onClick={() => addArrayItem('highlights')} className="text-orange-500"><PlusCircle className="w-4 h-4" /></button>
                     </div>
                     {form.highlights.map((h, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input value={h} onChange={(e) => handleArrayChange(idx, e.target.value, 'highlights')} placeholder="Highlight..." className="h-10 rounded-xl border-gray-100 bg-gray-50 focus:bg-white" />
-                        <button type="button" onClick={() => removeArrayItem(idx, 'highlights')} className="text-gray-300 hover:text-red-500"><X className="w-4 h-4" /></button>
+                      <div key={idx} className="relative group">
+                        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                          <ReactQuill
+                            value={h}
+                            onChange={(content) => handleArrayChange(idx, content, 'highlights')}
+                            theme="snow"
+                            modules={{
+                              toolbar: [
+                                ['bold', 'italic', 'underline'],
+                                ['link'],
+                                ['clean'],
+                              ],
+                            }}
+                          />
+                        </div>
+                        <button type="button" onClick={() => removeArrayItem(idx, 'highlights')} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"><X className="w-4 h-4" /></button>
                       </div>
                     ))}
                   </div>
@@ -551,6 +759,140 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                         <Textarea value={f.a} onChange={(e) => handleFAQChange(idx, 'a', e.target.value)} placeholder="Answer" className="rounded-lg text-[10px] min-h-[60px] border-white" />
                       </div>
                     ))}
+                  </div>
+
+                  {/* Know Before You Go */}
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest text-amber-600">Know Before You Go</label>
+                      <button type="button" onClick={() => addArrayItem('knowBeforeYouGo')} className="text-amber-500"><PlusCircle className="w-4 h-4" /></button>
+                    </div>
+                    <div className="space-y-4">
+                      {form.knowBeforeYouGo.map((item, idx) => (
+                        <div key={idx} className="p-4 bg-white rounded-2xl border border-amber-100/50 space-y-2 relative group">
+                          <button type="button" onClick={() => removeArrayItem(idx, 'knowBeforeYouGo')} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+                          <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Guideline #{idx + 1}</label>
+                          <div className="bg-white rounded-lg border border-amber-100 overflow-hidden">
+                            <ReactQuill 
+                              value={item} 
+                              onChange={(content) => handleArrayChange(idx, content, 'knowBeforeYouGo')}
+                              theme="snow"
+                              modules={{
+                                toolbar: [
+                                  [{ 'header': [1, 2, 3, false] }],
+                                  ['bold', 'italic', 'underline'],
+                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  ['clean']
+                                ]
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ground Truth */}
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest text-red-600">Ground Truth</label>
+                      <button type="button" onClick={addGroundTruth} className="text-red-500"><PlusCircle className="w-4 h-4" /></button>
+                    </div>
+                    <div className="space-y-4">
+                      {(form.groundTruth || []).map((item, idx) => (
+                        <div key={idx} className="p-4 bg-white rounded-2xl border border-red-100/50 space-y-3 relative group">
+                          <button type="button" onClick={() => removeGroundTruth(idx)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+                          
+                          <div>
+                            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Insight Title #{idx + 1}</label>
+                            <Input 
+                              value={item.title} 
+                              onChange={(e) => handleGroundTruthChange(idx, 'title', e.target.value)} 
+                              placeholder="e.g. Temple Photography & Protocols" 
+                              className="h-10 rounded-lg border-red-100 bg-white focus:bg-white text-sm font-semibold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Description</label>
+                            <div className="bg-white rounded-lg border border-red-100 overflow-hidden">
+                              <ReactQuill 
+                                value={item.description} 
+                                onChange={(content) => handleGroundTruthChange(idx, 'description', content)}
+                                theme="snow"
+                                modules={{
+                                  toolbar: [
+                                    [{ 'header': [1, 2, 3, false] }],
+                                    ['bold', 'italic', 'underline'],
+                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                    ['clean']
+                                  ]
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Testimonials & Reviews */}
+                  <div className="space-y-4 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest text-amber-600">Customer Testimonials & Reviews</label>
+                      <button type="button" onClick={addTestimonial} className="text-amber-500"><PlusCircle className="w-4 h-4" /></button>
+                    </div>
+                    <div className="space-y-4">
+                      {form.testimonials?.map((testimonial, idx) => (
+                        <div key={idx} className="p-4 bg-white rounded-2xl border border-amber-100/50 space-y-3 relative group">
+                          <button type="button" onClick={() => removeTestimonial(idx)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input 
+                              value={testimonial.name} 
+                              onChange={(e) => handleTestimonialChange(idx, 'name', e.target.value)} 
+                              placeholder="Guest Name" 
+                              className="h-10 rounded-lg border-amber-100 bg-white focus:bg-white text-sm font-semibold"
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">Rating:</span>
+                              <select 
+                                value={testimonial.rating} 
+                                onChange={(e) => handleTestimonialChange(idx, 'rating', parseFloat(e.target.value))}
+                                className="h-10 rounded-lg border border-amber-100 bg-white focus:bg-white px-2 text-sm font-semibold"
+                              >
+                                {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(r => (
+                                  <option key={r} value={r}>{r}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="bg-white rounded-lg border border-amber-100 overflow-hidden">
+                            <ReactQuill 
+                              value={testimonial.review} 
+                              onChange={(content) => handleTestimonialChange(idx, 'review', content)}
+                              theme="snow"
+                              modules={{
+                                toolbar: [
+                                  [{ 'header': [1, 2, 3, false] }],
+                                  ['bold', 'italic', 'underline'],
+                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                  ['clean']
+                                ]
+                              }}
+                            />
+                          </div>
+
+                          <Input 
+                            value={testimonial.avatar || ''} 
+                            onChange={(e) => handleTestimonialChange(idx, 'avatar', e.target.value)} 
+                            placeholder="Avatar Initials or Single Letter (e.g. 'A', 'RK')"
+                            className="h-10 rounded-lg border-amber-100 bg-white focus:bg-white text-sm font-semibold text-center"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -741,7 +1083,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${openDay === i ? 'bg-orange-50 text-orange-500 rotate-180' : 'bg-gray-50 text-gray-300'}`}><ChevronDown size={28} /></div>
                                 </button>
                                 {openDay === i && (
-                                  <div className="px-10 pb-12 pl-32 text-gray-500 leading-relaxed text-xl animate-in slide-in-from-top-6 duration-500">{day.desc || 'Journey details...'}</div>
+                                  <div className="px-10 pb-12 pl-32 text-gray-500 leading-relaxed text-xl animate-in slide-in-from-top-6 duration-500" dangerouslySetInnerHTML={{ __html: day.details || 'Journey details...' }} />
                                 )}
                              </div>
                            ))}
