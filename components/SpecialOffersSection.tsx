@@ -260,7 +260,7 @@ const SpecialOffersSection = ({
                     </div>
 
                     <div className="ps-card-highlights">
-                      {p.highlights.map((h) => (
+                      {p.highlights?.map((h: string) => (
                         <div key={h} className="ps-card-highlight-item">
                           <span className="ps-card-highlight-dot" />
                           {h}

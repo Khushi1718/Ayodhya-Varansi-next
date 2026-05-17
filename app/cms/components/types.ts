@@ -24,6 +24,7 @@ export interface Blog {
   seoTitle?: string;
   seoDescription?: string;
   faqs?: { question: string; answer: string }[];
+  recommendations?: { title: string; url: string }[];
 }
 
 export interface BlogDetailProps {

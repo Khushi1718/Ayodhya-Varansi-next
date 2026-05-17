@@ -50,6 +50,8 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
     additionalImages: '',
     faqs: [] as { question: string; answer: string }[],
     recommendations: [] as { title: string; url: string }[],
+    quotes: '',
+    tags: '',
     status: 'published'
   };
 
@@ -76,6 +78,8 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
         : (blogData.additionalImages ?? ''),
       faqs: blogData.faqs ?? [],
       recommendations: blogData.recommendations ?? [],
+      quotes: Array.isArray(blogData.quotes) ? blogData.quotes.join('\n') : (blogData.quotes ?? ''),
+      tags: Array.isArray(blogData.tags) ? blogData.tags.join(',') : (blogData.tags ?? ''),
       status: blogData.status ?? 'published'
     } : {})
   });
