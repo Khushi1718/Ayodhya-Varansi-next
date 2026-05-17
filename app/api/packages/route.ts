@@ -26,6 +26,8 @@ export async function GET() {
             reviews: 1,
             highlights: 1,
             images: 1,
+            isOffer: 1,
+            offerPercentage: 1,
             status: 1,
             createdAt: 1,
           },
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
       id: uuidv4(),
       slug,
       status: pkgData.status || "published",
+      isOffer: pkgData.isOffer || false,
+      offerPercentage: pkgData.offerPercentage || "10% OFF",
       createdAt: new Date().toISOString(),
     };
 

@@ -17,6 +17,13 @@ export interface Blog {
   coverImage?: string;
   authorRole?: string;
   readTime?: string;
+  
+  // New SOP Fields
+  region?: string;
+  tldr?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  faqs?: { question: string; answer: string }[];
 }
 
 export interface BlogDetailProps {
@@ -73,6 +80,8 @@ export interface Package {
     main: string;
     gallery: string[];
   };
+  isOffer?: boolean;
+  offerPercentage?: string;
   status?: string;
 }
 

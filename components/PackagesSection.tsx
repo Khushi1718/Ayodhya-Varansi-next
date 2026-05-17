@@ -13,86 +13,7 @@ import pkgSarnath       from "@/assets/pkg-sarnath.png";
 import pkgCircuit       from "@/assets/pkg-circuit.png";
 import pkgGangesSunrise from "@/assets/pkg-ganges-sunrise.png";
 
-const fallbackPackages = [
-  {
-    id: 1,
-    image: pkgAyodhya,
-    destination: "Ayodhya",
-    tag: "Sacred Heritage",
-    title: "Ayodhya Divine Darshan",
-    duration: "3 Days · 2 Nights",
-    highlights: ["Ram Mandir VIP Darshan", "Saryu River Evening Aarti", "Kanak Bhawan Temple"],
-    places: ["Ram Mandir", "Hanuman Garhi", "Saryu Ghat"],
-    rating: 4.9,
-    reviews: 218,
-    accent: "#c27b4a",
-  },
-  {
-    id: 2,
-    image: pkgVaranasi,
-    destination: "Varanasi",
-    tag: "City of Light",
-    title: "Varanasi Soul Journey",
-    duration: "4 Days · 3 Nights",
-    highlights: ["Ganga Aarti Ceremony", "Sunrise Boat Ride", "Kashi Vishwanath Darshan"],
-    places: ["Dashashwamedh Ghat", "Kashi Vishwanath", "Manikarnika Ghat"],
-    rating: 4.8,
-    reviews: 341,
-    accent: "#3b7eb5",
-  },
-  {
-    id: 3,
-    image: pkgPrayagraj,
-    destination: "Prayagraj",
-    tag: "Triveni Sangam",
-    title: "Sangam Spiritual Retreat",
-    duration: "2 Days · 1 Night",
-    highlights: ["Holy Sangam Dip", "Allahabad Fort Visit", "Akshayavat Darshan"],
-    places: ["Triveni Sangam", "Allahabad Fort", "Hanuman Mandir"],
-    rating: 4.7,
-    reviews: 156,
-    accent: "#7b6fa0",
-  },
-  {
-    id: 4,
-    image: pkgSarnath,
-    destination: "Sarnath",
-    tag: "Buddhist Heritage",
-    title: "Sarnath Heritage Trail",
-    duration: "2 Days · 1 Night",
-    highlights: ["Dhamek Stupa Visit", "Sarnath Museum Tour", "Sunset at the Gardens"],
-    places: ["Dhamek Stupa", "Mulagandhakuti Vihara", "Archaeological Museum"],
-    rating: 4.6,
-    reviews: 102,
-    accent: "#5a8a62",
-  },
-  {
-    id: 5,
-    image: pkgCircuit,
-    destination: "Varanasi",
-    tag: "Temple Circuit",
-    title: "Kashi Vishwanath Circuit",
-    duration: "3 Days · 2 Nights",
-    highlights: ["Ancient Temple Trail", "Evening Ghat Walk", "Traditional Silk Weaving"],
-    places: ["Kashi Vishwanath", "Durga Temple", "Sankat Mochan"],
-    rating: 4.9,
-    reviews: 279,
-    accent: "#b5733b",
-  },
-  {
-    id: 6,
-    image: pkgGangesSunrise,
-    destination: "Varanasi",
-    tag: "Sunrise Experience",
-    title: "Sacred Ganges Sunrise",
-    duration: "2 Days · 1 Night",
-    highlights: ["Pre-dawn Ghat Walk", "Sunrise Boat Cruise", "Morning Meditation"],
-    places: ["Assi Ghat", "Dashashwamedh Ghat", "Panchganga Ghat"],
-    rating: 5.0,
-    reviews: 193,
-    accent: "#c25050",
-  },
-];
+const fallbackPackages: any[] = [];
 
 /* ------------------------------------------------------------------ */
 /*  COMPONENT                                                           */
@@ -206,10 +127,17 @@ const PackagesSection = () => {
             rating: pkg.rating || 4.8,
             reviews: pkg.reviews || 100,
             accent: '#c27b4a',
-            slug: pkg.slug || pkg.id || pkg._id
+            slug: pkg.slug || pkg.id || pkg._id,
+            isOffer: pkg.isOffer || false,
           }));
-          setPackages(cmsPackages);
-          setTotal(cmsPackages.length);
+          const normalPackages = cmsPackages.filter((p: any) => !p.isOffer).slice(0, 5);
+          if (normalPackages.length > 0) {
+            setPackages(normalPackages);
+            setTotal(normalPackages.length);
+          } else {
+            setPackages(fallbackPackages);
+            setTotal(fallbackPackages.length);
+          }
         } else {
           setPackages(fallbackPackages);
           setTotal(fallbackPackages.length);
@@ -231,8 +159,13 @@ const PackagesSection = () => {
     const nextIdx = Math.max(0, Math.min(idx, total - 1));
     setActive(nextIdx);
     if (trackRef.current) {
-      const cardW = 360; 
-      const cardGap = 24;
+      // Dynamic width calculation based on CSS variables or screen width
+      const isMobile = window.innerWidth <= 768;
+      const isSmallMobile = window.innerWidth <= 400;
+      
+      const cardW = isSmallMobile ? 280 : (isMobile ? 300 : 360);
+      const cardGap = isMobile ? 16 : 24;
+      
       trackRef.current.scrollTo({
         left: nextIdx * (cardW + cardGap),
         behavior: "smooth"
@@ -347,6 +280,8 @@ const PackagesSection = () => {
       }
     }
   };
+
+  if (!packages || packages.length === 0) return null;
 
   const pkg = packages[active];
 

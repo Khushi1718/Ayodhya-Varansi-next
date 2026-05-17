@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Menu, X, Phone, ChevronDown, ArrowRight, MapPin, Clock, Star, BookOpen } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -36,18 +36,6 @@ const destinations = [
   { image: gangaAarti,    name: "Prayagraj",  tagline: "The Sacred Triveni Confluence", spots: ["Triveni Sangam", "Anand Bhavan", "Allahabad Fort"] },
 ];
 
-const blogPosts = [
-  { image: gangaAarti,    title: "The Mystical Ganga Aarti: A Complete Guide",        cat: "Varanasi", time: "5 min read" },
-  { image: ayodhyaTemple, title: "Ayodhya's Ram Mandir: What to Expect",              cat: "Ayodhya",  time: "4 min read" },
-  { image: diyaPrayer,    title: "Spiritual Practices for the Modern Traveler",       cat: "Guide",    time: "6 min read" },
-];
-
-const blogCategories = [
-  { label: "Ayodhya",     count: 8  },
-  { label: "Varanasi",    count: 12 },
-  { label: "Travel Tips", count: 5  },
-  { label: "Spirituality",count: 7  },
-];
 
 /* ── Mega Menu Shell ──────────────────────────────────────────── */
 function MegaShell({ visible, width, children }: { visible: boolean; width: number; children: React.ReactNode }) {
@@ -84,70 +72,231 @@ function MegaShell({ visible, width, children }: { visible: boolean; width: numb
 
 /* ── Packages Mega Menu ───────────────────────────────────────── */
 function PackagesMega({ visible }: { visible: boolean }) {
+  const [packages, setPackages] = useState<any[]>([]);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<{ type: 'duration' | 'city' | 'all', value: string, label: string }>({ type: 'all', value: 'all', label: 'All Packages' });
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (visible && !hasFetched && !isLoading) {
+      setIsLoading(true);
+      fetch('/api/packages')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.data)) {
+            setPackages(data.data);
+          }
+          setHasFetched(true);
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching packages:", err);
+          setHasFetched(true);
+          setIsLoading(false);
+        });
+    }
+  }, [visible, hasFetched, isLoading]);
+
+  const durationFilters = [
+    { label: "All Packages", sub: "View everything", type: "all", value: "all" },
+    { label: "Weekend Escapes", sub: "2 – 3 Days", type: "duration", value: "2-3" },
+    { label: "Classic Journeys", sub: "4 – 5 Days", type: "duration", value: "4-5" },
+    { label: "Grand Pilgrimages", sub: "6 Days & above", type: "duration", value: "6+" },
+  ];
+
+  const cityFilters = [
+    { label: "Varanasi", type: "city", value: "varanasi" },
+    { label: "Ayodhya", type: "city", value: "ayodhya" },
+    { label: "Prayagraj", type: "city", value: "prayagraj" },
+    { label: "Mathura", type: "city", value: "mathura" },
+  ];
+
+  const { filteredPackages, stats } = useMemo(() => {
+    const counts = { all: packages.length, "2-3": 0, "4-5": 0, "6+": 0, varanasi: 0, ayodhya: 0, prayagraj: 0, mathura: 0 };
+    
+    packages.forEach(p => {
+      // duration
+      if (p.durationCategory) {
+        counts[p.durationCategory as keyof typeof counts] = (counts[p.durationCategory as keyof typeof counts] || 0) + 1;
+      } else if (p.duration) {
+        const d = p.duration.toLowerCase();
+        if (d.includes("2") || d.includes("3")) counts["2-3"]++;
+        else if (d.includes("4") || d.includes("5")) counts["4-5"]++;
+        else counts["6+"]++;
+      }
+      
+      // city
+      if (p.destination) {
+        const dest = p.destination.toLowerCase();
+        if (dest.includes("varanasi")) counts.varanasi++;
+        if (dest.includes("ayodhya")) counts.ayodhya++;
+        if (dest.includes("prayagraj")) counts.prayagraj++;
+        if (dest.includes("mathura")) counts.mathura++;
+      }
+    });
+
+    let displayList = packages;
+    
+    if (activeFilter.type === 'duration') {
+      displayList = packages.filter(p => {
+        if (p.durationCategory) return p.durationCategory === activeFilter.value;
+        const d = (p.duration || "").toLowerCase();
+        if (activeFilter.value === "2-3") return d.includes("2") || d.includes("3");
+        if (activeFilter.value === "4-5") return d.includes("4") || d.includes("5");
+        return true;
+      });
+    } else if (activeFilter.type === 'city') {
+      displayList = packages.filter(p => p.destination?.toLowerCase().includes(activeFilter.value));
+    }
+
+    if (packages.length === 0) displayList = featuredPackages;
+
+    return { 
+       filteredPackages: displayList.slice(0, 3), 
+       stats: counts 
+    };
+  }, [packages, activeFilter]);
+
   return (
     <MegaShell visible={visible} width={880}>
       {/* Top strip */}
       <div style={{ borderBottom: "1px solid hsl(var(--border))", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(var(--muted-foreground))", fontFamily: "var(--font-roboto)" }}>
-          Curated Travel Experiences
+          {activeFilter.type === 'all' ? 'Curated Travel Experiences' : `Filtered By: ${activeFilter.label}`}
         </p>
         <Link href="/packages" style={{ fontSize: 11, fontWeight: 600, color: "hsl(var(--primary))", display: "flex", alignItems: "center", gap: 4, fontFamily: "var(--font-roboto)" }}>
           View all packages <ArrowRight size={11} />
         </Link>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 192px", gap: 0 }}>
+      {/* City Filters Top Bar */}
+      <div style={{ borderBottom: "1px solid hsl(var(--border))", padding: "12px 24px", display: "flex", alignItems: "center", gap: 10, background: "hsl(var(--primary)/0.02)" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(var(--muted-foreground))", marginRight: 8, fontFamily: "var(--font-roboto)" }}>
+          Cities:
+        </p>
+        <div 
+          onMouseEnter={() => setActiveFilter({ type: 'all', value: 'all', label: 'All Packages' })}
+          style={{
+            fontSize: 11, fontWeight: 600, cursor: "pointer",
+            padding: "5px 14px", borderRadius: 99,
+            background: activeFilter.type === 'all' ? "hsl(var(--primary))" : "white",
+            color: activeFilter.type === 'all' ? "white" : "hsl(var(--foreground))",
+            border: `1px solid ${activeFilter.type === 'all' ? "hsl(var(--primary))" : "hsl(var(--border))"}`,
+            transition: "all 200ms ease"
+          }}
+        >
+          All
+        </div>
+        {cityFilters.map(c => (
+          <div 
+            key={c.label}
+            onMouseEnter={() => setActiveFilter({ type: 'city', value: c.value, label: c.label })}
+            style={{
+              fontSize: 11, fontWeight: 600, cursor: "pointer",
+              padding: "5px 14px", borderRadius: 99,
+              background: activeFilter.value === c.value ? "hsl(var(--primary))" : "white",
+              color: activeFilter.value === c.value ? "white" : "hsl(var(--foreground))",
+              border: `1px solid ${activeFilter.value === c.value ? "hsl(var(--primary))" : "hsl(var(--border))"}`,
+              transition: "all 200ms ease",
+              display: "flex", alignItems: "center", gap: 6
+            }}
+          >
+            {c.label} 
+            <span style={{ 
+              background: activeFilter.value === c.value ? "rgba(255,255,255,0.2)" : "hsl(var(--primary)/0.08)", 
+              color: activeFilter.value === c.value ? "white" : "hsl(var(--primary))",
+              padding: "1px 6px", borderRadius: 99, fontSize: 9 
+            }}>
+              {stats[c.value as keyof typeof stats] || 0}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 200px", gap: 0 }}>
         {/* Left — package cards */}
         <div style={{ padding: "24px", borderRight: "1px solid hsl(var(--border))" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {featuredPackages.map((pkg) => (
-              <div key={pkg.title} className="mega-pkg-card group">
-                <div style={{ position: "relative", height: 130, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
-                  <Image src={pkg.image} alt={pkg.title} fill sizes="260px" style={{ objectFit: "cover", transition: "transform 600ms cubic-bezier(0.2, 0, 0.2, 1)" }} className="mega-img" loading="lazy" />
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
-                  
-                  <span style={{
-                    position: "absolute", top: 10, left: 10,
-                    background: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)",
-                    color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 9px",
-                    borderRadius: 99, letterSpacing: "0.06em", textTransform: "uppercase",
-                    border: "1px solid rgba(255,255,255,0.25)"
-                  }}>{pkg.label}</span>
+            {filteredPackages.map((pkg: any, idx: number) => {
+              const isStatic = !pkg.id;
+              const imgUrl = isStatic ? pkg.image : (pkg.images?.main || pkg.images?.gallery?.[0] || pkg.coverImage || "");
+              const title = pkg.title;
+              const sub = isStatic ? pkg.sub : pkg.duration;
+              const rating = pkg.rating || "4.8";
+              const dest = isStatic ? pkg.dest : pkg.destination;
+              const label = pkg.label || "Curated";
+              const pkgUrl = isStatic ? `/packages/divine-ayodhya-kashi-pilgrimage` : `/packages/${pkg.slug}`;
 
-                  <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", padding: "2px 6px", borderRadius: 4 }}>
-                      <Star size={9} style={{ color: "hsl(var(--primary))", fill: "hsl(var(--primary))" }} />
-                      <span style={{ color: "#fff", fontSize: 10, fontWeight: 700 }}>{pkg.rating}</span>
+              return (
+                <div key={pkg.id || idx} className="mega-pkg-card group">
+                  <div style={{ position: "relative", height: 130, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
+                    {isStatic ? (
+                      <Image src={imgUrl} alt={title} fill sizes="260px" style={{ objectFit: "cover", transition: "transform 600ms cubic-bezier(0.2, 0, 0.2, 1)" }} className="mega-img" loading="lazy" />
+                    ) : (
+                      <img src={imgUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 600ms cubic-bezier(0.2, 0, 0.2, 1)" }} className="mega-img" loading="lazy" />
+                    )}
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
+                    
+                    <span style={{
+                      position: "absolute", top: 10, left: 10,
+                      background: "rgba(255,255,255,0.2)", backdropFilter: "blur(12px)",
+                      color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 9px",
+                      borderRadius: 99, letterSpacing: "0.06em", textTransform: "uppercase",
+                      border: "1px solid rgba(255,255,255,0.25)"
+                    }}>{label}</span>
+
+                    <div style={{ position: "absolute", bottom: 10, left: 10, right: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)", padding: "2px 6px", borderRadius: 4 }}>
+                        <Star size={9} style={{ color: "hsl(var(--primary))", fill: "hsl(var(--primary))" }} />
+                        <span style={{ color: "#fff", fontSize: 10, fontWeight: 700 }}>{rating}</span>
+                      </div>
+                      <span style={{ display: "flex", alignItems: "center", gap: 3, color: "rgba(255,255,255,0.9)", fontSize: 9, fontWeight: 600 }}>
+                        <MapPin size={9} />{dest}
+                      </span>
                     </div>
-                    <span style={{ display: "flex", alignItems: "center", gap: 3, color: "rgba(255,255,255,0.9)", fontSize: 9, fontWeight: 600 }}>
-                      <MapPin size={9} />{pkg.dest}
-                    </span>
                   </div>
-                </div>
 
-                <div style={{ padding: "0 2px" }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: "hsl(var(--foreground))", lineHeight: 1.3, marginBottom: 4, fontFamily: "var(--font-roboto)" }} className="mega-pkg-title">{pkg.title}</p>
-                  <p style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", display: "flex", alignItems: "center", gap: 4, marginBottom: 12, fontFamily: "var(--font-roboto)" }}>
-                    <Clock size={11} />{pkg.sub}
-                  </p>
-                  
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <Link href="/packages/divine-ayodhya-kashi-pilgrimage" style={{ 
-                      flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, 
-                      padding: "8px 0", borderRadius: 7, border: "1.5px solid hsl(var(--border))",
-                      color: "hsl(var(--foreground))", background: "#fff", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",
-                      position: "relative", overflow: "hidden"
-                    }} className="mega-btn-sec">Details</Link>
-                    <button style={{ 
-                      flex: 1, fontSize: 10, fontWeight: 700, 
-                      padding: "8px 0", borderRadius: 7, 
-                      color: "#fff", background: "hsl(var(--primary))", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",
-                      position: "relative", overflow: "hidden", boxShadow: "0 2px 8px hsl(var(--primary) / 0.2)"
-                    }} className="mega-btn-pri">Enquire</button>
+                  <div style={{ padding: "0 2px" }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: "hsl(var(--foreground))", lineHeight: 1.3, marginBottom: 4, fontFamily: "var(--font-roboto)" }} className="mega-pkg-title line-clamp-1">{title}</p>
+                    <p style={{ fontSize: 11, color: "hsl(var(--muted-foreground))", display: "flex", alignItems: "center", gap: 4, marginBottom: 12, fontFamily: "var(--font-roboto)" }}>
+                      <Clock size={11} />{sub}
+                    </p>
+                    
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <Link href={pkgUrl} style={{ 
+                        flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, 
+                        padding: "8px 0", borderRadius: 7, border: "1.5px solid hsl(var(--border))",
+                        color: "hsl(var(--foreground))", background: "#fff", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",
+                        position: "relative", overflow: "hidden"
+                      }} className="mega-btn-sec">Details</Link>
+                      <button style={{ 
+                        flex: 1, fontSize: 10, fontWeight: 700, 
+                        padding: "8px 0", borderRadius: 7, 
+                        color: "#fff", background: "hsl(var(--primary))", transition: "all 280ms cubic-bezier(0.23, 1, 0.32, 1)",
+                        position: "relative", overflow: "hidden", boxShadow: "0 2px 8px hsl(var(--primary) / 0.2)"
+                      }} className="mega-btn-pri">Enquire</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+          
+          {/* Bottom Action Strip */}
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px dashed hsl(var(--border))" }}>
+            <Link 
+              href="/packages" 
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                width: "100%", padding: "12px", borderRadius: 8,
+                background: "hsl(var(--primary)/0.03)", color: "hsl(var(--primary))",
+                fontSize: 12, fontWeight: 700, transition: "all 200ms ease",
+                border: "1px solid transparent"
+              }}
+              className="hover:bg-[hsl(var(--primary)/0.08)] hover:border-[hsl(var(--primary)/0.2)]"
+            >
+              Explore all {activeFilter.label === 'All Packages' ? '' : activeFilter.label} Experiences <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 
@@ -157,16 +306,24 @@ function PackagesMega({ visible }: { visible: boolean }) {
             Browse by Duration
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {durationLinks.map((d) => (
-              <Link href="/packages" key={d.label} className="mega-side-link">
+            {durationFilters.map((d) => (
+              <div 
+                key={d.label} 
+                onMouseEnter={() => setActiveFilter({ type: d.type as any, value: d.value, label: d.label })}
+                className="mega-side-link cursor-pointer"
+                style={{ 
+                  background: activeFilter.value === d.value ? "hsl(var(--primary)/0.08)" : "transparent",
+                  borderLeftColor: activeFilter.value === d.value ? "hsl(var(--primary))" : "transparent" 
+                }}
+              >
                 <div>
                   <p style={{ fontSize: 12, fontWeight: 600, color: "hsl(var(--foreground))" }}>{d.label}</p>
                   <p style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", marginTop: 1 }}>{d.sub}</p>
                 </div>
                 <span style={{ fontSize: 10, background: "hsl(var(--primary)/0.08)", color: "hsl(var(--primary))", padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>
-                  {d.count}
+                  {d.value === 'all' ? stats.all : (stats[d.value as keyof typeof stats] || 0)}
                 </span>
-              </Link>
+              </div>
             ))}
           </div>
 
@@ -177,6 +334,7 @@ function PackagesMega({ visible }: { visible: boolean }) {
             </div>
           </div>
         </div>
+
       </div>
 
       <style>{`
@@ -260,8 +418,8 @@ function PackagesMega({ visible }: { visible: boolean }) {
         }
 
         .mega-side-link:hover { 
-          background: hsl(var(--primary) / 0.08);
-          border-left-color: hsl(var(--primary));
+          background: hsl(var(--primary) / 0.08) !important;
+          border-left-color: hsl(var(--primary)) !important;
           transform: translateX(2px);
         }
       `}</style>
@@ -317,63 +475,6 @@ function PlacesMega({ visible }: { visible: boolean }) {
   );
 }
 
-/* ── Blog Mega Menu ───────────────────────────────────────────── */
-function BlogMega({ visible }: { visible: boolean }) {
-  return (
-    <MegaShell visible={visible} width={760}>
-      <div style={{ borderBottom: "1px solid hsl(var(--border))", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(var(--muted-foreground))", fontFamily: "var(--font-roboto)" }}>
-          Travel Stories &amp; Guides
-        </p>
-        <Link href="/blog" style={{ fontSize: 11, fontWeight: 600, color: "hsl(var(--primary))", display: "flex", alignItems: "center", gap: 4, fontFamily: "var(--font-roboto)" }}>
-          All articles <ArrowRight size={11} />
-        </Link>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 156px", gap: 0 }}>
-        <div style={{ padding: "20px 24px", borderRight: "1px solid hsl(var(--border))", display: "flex", flexDirection: "column", gap: 4 }}>
-          {blogPosts.map((post) => (
-            <Link href="/blog/the-mystical-ganga-aarti-guide" key={post.title} className="blog-row">
-              <div style={{ width: 60, height: 60, borderRadius: 8, overflow: "hidden", flexShrink: 0, position: "relative" }}>
-                <Image src={post.image} alt={post.title} fill sizes="60px" style={{ objectFit: "cover", transition: "transform 400ms ease" }} className="blog-img" loading="lazy" />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: "hsl(var(--primary))", textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "var(--font-roboto)" }}>{post.cat}</span>
-                  <span style={{ fontSize: 9, color: "hsl(var(--muted-foreground))", display: "flex", alignItems: "center", gap: 3, fontFamily: "var(--font-roboto)" }}>
-                    <BookOpen size={8} />{post.time}
-                  </span>
-                </div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "hsl(var(--foreground))", lineHeight: 1.35, fontFamily: "var(--font-roboto)" }} className="blog-title">{post.title}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        <div style={{ padding: "20px 18px" }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(var(--muted-foreground))", marginBottom: 10, fontFamily: "var(--font-roboto)" }}>
-            Categories
-          </p>
-          {blogCategories.map((c) => (
-            <Link href="/blog" key={c.label} className="blog-cat">
-              <span style={{ fontSize: 12, color: "hsl(var(--foreground))", fontFamily: "var(--font-roboto)" }}>{c.label}</span>
-              <span style={{ fontSize: 10, color: "hsl(var(--muted-foreground))", fontFamily: "var(--font-roboto)" }}>{c.count}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <style>{`
-        .blog-row { display:flex; align-items:center; gap:14px; padding:10px 8px; border-radius:10px; transition:background 180ms ease; }
-        .blog-row:hover { background:hsl(var(--muted)/0.5); }
-        .blog-row:hover .blog-img { transform:scale(1.08); }
-        .blog-row:hover .blog-title { color:hsl(var(--primary)); }
-        .blog-cat { display:flex; align-items:center; justify-content:space-between; padding:7px 8px; border-radius:7px; transition:background 180ms ease; }
-        .blog-cat:hover { background:hsl(var(--accent)); }
-      `}</style>
-    </MegaShell>
-  );
-}
 
 /* ── Navbar ───────────────────────────────────────────────────── */
 type Menu = "packages" | "places" | "blog" | null;
@@ -399,7 +500,6 @@ export default function Navbar() {
     { label: "Home",     key: null, href: "/" },
     { label: "Packages", key: "packages", href: "/packages" },
     { label: "About Us", key: null, href: "/about" },
-    { label: "Blogs",    key: "blog", href: "/blog" },
   ];
 
   return (
@@ -688,7 +788,6 @@ export default function Navbar() {
                     <ChevronDown size={13} className={`transition-transform duration-200 ${active === item.key ? "rotate-180" : ""}`} />
                   </Link>
                   {item.key === "packages" && <PackagesMega visible={active === "packages"} />}
-                  {item.key === "blog"     && <BlogMega     visible={active === "blog"}     />}
                 </div>
               ) : (
                 <Link key={item.label} href={item.href} className="nav-trigger text-gray-700 hover:text-primary">
@@ -758,21 +857,6 @@ export default function Navbar() {
                           <div>
                             <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "var(--font-roboto)" }}>{d.name}</p>
                             <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-roboto)" }}>{d.tagline}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                  {mobileExp === item.key && item.key === "blog" && (
-                    <div className="py-3 pl-3 space-y-3">
-                      {blogPosts.map((p) => (
-                        <Link key={p.title} href="/blog/the-mystical-ganga-aarti-guide" onClick={() => setMobileOpen(false)} className="flex items-center gap-3">
-                          <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0">
-                            <Image src={p.image} alt={p.title} fill sizes="44px" style={{ objectFit: "cover" }} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "var(--font-roboto)" }}>{p.title}</p>
-                            <p className="text-xs text-muted-foreground" style={{ fontFamily: "var(--font-roboto)" }}>{p.cat}</p>
                           </div>
                         </Link>
                       ))}

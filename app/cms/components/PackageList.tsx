@@ -119,15 +119,18 @@ export default function PackageList({
 
         {!loading && filteredPackages.length > 0 && viewMode === 'grid' && (
           <div className={fullWidth ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" : "space-y-4"}>
-            {filteredPackages.map((pkg) => (
-              <button
-                key={pkg.id}
+            {filteredPackages.map((pkg, index) => (
+              <div
+                key={pkg.id || pkg._id || index}
                 onClick={() => onSelectPackage(pkg)}
-                className={`text-left transition-all relative group ${
+                className={`text-left transition-all relative group cursor-pointer block w-full ${
                   fullWidth 
                     ? 'bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-100 hover:-translate-y-1' 
                     : `w-full p-4 rounded-2xl border ${selectedPackage?.id === pkg.id ? 'bg-orange-50 border-orange-200' : 'bg-white border-transparent hover:bg-gray-50'}`
                 }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectPackage(pkg); }}
               >
                 <div className={fullWidth ? "flex flex-col relative" : "flex gap-4 items-center relative"}>
                   <div className={fullWidth ? "aspect-[16/9] w-full relative bg-gray-100" : "w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0"}>
@@ -181,7 +184,7 @@ export default function PackageList({
                     </div>
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -200,8 +203,8 @@ export default function PackageList({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredPackages.map((pkg) => (
-                  <tr key={pkg.id} className="hover:bg-gray-50/50 transition-colors group">
+                {filteredPackages.map((pkg, index) => (
+                  <tr key={pkg.id || pkg._id || index} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { 
   Trash2, Eye, Loader, Save, Plus, ArrowRight, Clock, User, 
   Tag, Quote as QuoteIcon, Image as ImageIcon, Upload, X, Maximize2,
-  Compass, Share2, Link2, ArrowLeft, Type
+  Compass, Share2, Link2, ArrowLeft, Type, MessageCircle, FileText
 } from 'lucide-react';
 import 'react-quill-new/dist/quill.snow.css';
 import { Blog, BlogDetailProps } from './types';
@@ -35,32 +35,56 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
   const initialFormState = {
     title: '',
     subtitle: '',
-    category: 'Travel',
-    author: '',
-    authorRole: 'Travel Expert',
+    category: 'Travel Guide',
+    region: 'Braj Region',
+    author: 'Gurudutt',
+    authorRole: '',
     date: new Date().toISOString().split('T')[0],
     thumbnailImage: '',
     content: '',
     readTime: '5 min read',
     coverImage: '',
-    tags: '',
-    quotes: '',
+    tldr: '',
+    seoTitle: '',
+    seoDescription: '',
     additionalImages: '',
+    faqs: [] as { question: string; answer: string }[],
+    recommendations: [] as { title: string; url: string }[],
     status: 'published'
   };
+
+  const normalizeFormState = (blogData: Blog | null) => ({
+    ...initialFormState,
+    ...(blogData ? {
+      ...blogData,
+      title: blogData.title ?? '',
+      subtitle: blogData.subtitle ?? '',
+      category: blogData.category ?? 'Travel Guide',
+      region: blogData.region ?? 'Braj Region',
+      author: blogData.author ?? 'Gurudutt',
+      authorRole: blogData.authorRole ?? '',
+      date: blogData.date ?? new Date().toISOString().split('T')[0],
+      thumbnailImage: blogData.thumbnailImage ?? '',
+      content: blogData.content ?? '',
+      readTime: blogData.readTime ?? '5 min read',
+      coverImage: blogData.coverImage ?? '',
+      tldr: blogData.tldr ?? '',
+      seoTitle: blogData.seoTitle ?? '',
+      seoDescription: blogData.seoDescription ?? '',
+      additionalImages: Array.isArray(blogData.additionalImages)
+        ? blogData.additionalImages.join('\n')
+        : (blogData.additionalImages ?? ''),
+      faqs: blogData.faqs ?? [],
+      recommendations: blogData.recommendations ?? [],
+      status: blogData.status ?? 'published'
+    } : {})
+  });
 
   const [form, setForm] = useState(initialFormState);
 
   useEffect(() => {
     if (blog) {
-      setForm({
-        ...initialFormState,
-        ...blog,
-        tags: blog.tags?.join(', ') || '',
-        quotes: blog.quotes?.join('\n') || '',
-        additionalImages: blog.additionalImages?.join('\n') || '',
-        status: blog.status || 'published'
-      });
+      setForm(normalizeFormState(blog));
     } else {
       setForm(initialFormState);
     }
@@ -70,6 +94,34 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFAQChange = (index: number, field: 'question' | 'answer', value: string) => {
+    const newFaqs = [...form.faqs];
+    newFaqs[index][field] = value;
+    setForm(prev => ({ ...prev, faqs: newFaqs }));
+  };
+
+  const addFAQ = () => {
+    setForm(prev => ({ ...prev, faqs: [...prev.faqs, { question: '', answer: '' }] }));
+  };
+
+  const removeFAQ = (index: number) => {
+    setForm(prev => ({ ...prev, faqs: prev.faqs.filter((_, i) => i !== index) }));
+  };
+
+  const handleRecommendationChange = (index: number, field: 'title' | 'url', value: string) => {
+    const newRecs = [...form.recommendations];
+    newRecs[index][field] = value;
+    setForm(prev => ({ ...prev, recommendations: newRecs }));
+  };
+
+  const addRecommendation = () => {
+    setForm(prev => ({ ...prev, recommendations: [...prev.recommendations, { title: '', url: '' }] }));
+  };
+
+  const removeRecommendation = (index: number) => {
+    setForm(prev => ({ ...prev, recommendations: prev.recommendations.filter((_, i) => i !== index) }));
   };
 
   const handleEditorChange = (content: string) => {
@@ -109,9 +161,6 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
     setMessage(null);
 
     try {
-      const tagsArray = form.tags.split(',').map((t) => t.trim()).filter(Boolean);
-      const quotesArray = form.quotes.split('\n').map((q) => q.trim()).filter(Boolean);
-      const imagesArray = form.additionalImages.split('\n').map((i) => i.trim()).filter(Boolean);
 
       // Validate required fields (Drafts only require title)
       if (!form.title.trim()) throw new Error('Title is required');
@@ -120,14 +169,13 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
         if (!form.subtitle.trim()) throw new Error('Summary is required');
         if (!form.author.trim()) throw new Error('Author is required');
         if (!form.content.trim()) throw new Error('Content is required');
+        if (form.seoTitle.length > 60) throw new Error('SEO Title must be under 60 characters');
+        if (form.seoDescription.length > 155) throw new Error('SEO Description must be under 155 characters');
       }
 
       const payload = {
         ...form,
         preview: form.subtitle,
-        tags: tagsArray,
-        quotes: quotesArray,
-        additionalImages: imagesArray,
         status: isDraft ? 'draft' : 'published'
       };
 
@@ -148,13 +196,28 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
       const data = await response.json();
 
       if (data.success) {
+        const publishedBlog = data.data;
+        const liveLink = publishedBlog?.slug ? `/blog/${publishedBlog.slug}` : null;
+        
         setMessage({ 
           type: 'success', 
-          text: isDraft 
-            ? 'Draft saved successfully!' 
-            : (blog ? 'Story updated successfully!' : 'Story published successfully!') 
+          text: (
+            <div className="flex flex-col gap-1">
+              <span>{isDraft ? 'Draft saved successfully!' : (blog ? 'Story updated successfully!' : 'Story published successfully!')}</span>
+              {liveLink && !isDraft && (
+                <a 
+                  href={liveLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[10px] font-bold underline decoration-green-400 underline-offset-2 hover:text-green-900 transition-colors"
+                >
+                  View Live: {window.location.origin}{liveLink} ↗
+                </a>
+              )}
+            </div>
+          ) as any
         });
-        if (onCreated) setTimeout(() => onCreated(), 1500);
+        if (onCreated) setTimeout(() => onCreated(), 2500);
       } else {
         setMessage({ type: 'error', text: `Error: ${data.error}` });
       }
@@ -252,15 +315,6 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            onClick={onViewDrafts}
-            className="text-xs font-bold uppercase tracking-wider text-orange-500 hover:text-orange-600 hover:bg-orange-50 h-9 px-4 rounded-xl"
-          >
-            <FileText className="w-3.5 h-3.5 mr-2" />
-            View Drafts
-          </Button>
-
           {blog && (
             <Button
               variant="outline"
@@ -322,42 +376,42 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                 <div className="p-3 bg-orange-50 rounded-2xl text-orange-500">
                   <ImageIcon className="w-6 h-6" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Blog Identity</h2>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Identity & Branding</h2>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div className="md:col-span-2">
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Engaging Title</label>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Engaging Title (H1)</label>
                   <Input
                     name="title"
                     value={form.title}
                     onChange={handleChange}
-                    placeholder="Enter an engaging title..."
+                    placeholder="e.g. How Many Days for Mathura Vrindavan? Complete 2026 Guide"
                     className="h-14 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all text-lg font-bold"
                     required
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Short Summary (for Card)</label>
-                  <Textarea 
-                    name="subtitle" 
-                    value={form.subtitle} 
-                    onChange={handleChange} 
-                    placeholder="Brief summary for the blog card..."
-                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none min-h-[100px] leading-relaxed"
-                    required 
-                  />
-                </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Category</label>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Category Label</label>
                   <Input
                     name="category"
                     value={form.category}
                     onChange={handleChange}
-                    placeholder="e.g. Travel, Spiritual"
-                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all"
+                    placeholder="e.g. TRAVEL GUIDE"
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Region Label</label>
+                  <Input
+                    name="region"
+                    value={form.region}
+                    onChange={handleChange}
+                    placeholder="e.g. BRAJ REGION"
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold"
                   />
                 </div>
 
@@ -385,7 +439,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                   />
                 </div>
 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Thumbnail (Card Image)</label>
                   <div className="flex gap-2">
                     <div className="flex-1 relative">
@@ -427,6 +481,101 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
               </div>
             </section>
 
+            {/* SEO SETTINGS SECTION */}
+            <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
+               <div className="flex items-center gap-3 mb-8">
+                <div className="p-3 bg-green-50 rounded-2xl text-green-600">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">SEO & Search Performance</h2>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">SEO Title Tag (Max 60)</label>
+                    <span className={`text-[10px] font-bold ${form.seoTitle.length > 60 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {form.seoTitle.length}/60
+                    </span>
+                  </div>
+                  <Input
+                    name="seoTitle"
+                    value={form.seoTitle}
+                    onChange={handleChange}
+                    placeholder="Exact title that appears in Google search results..."
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Meta Description (Max 155)</label>
+                    <span className={`text-[10px] font-bold ${form.seoDescription.length > 155 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {form.seoDescription.length}/155
+                    </span>
+                  </div>
+                  <Textarea
+                    name="seoDescription"
+                    value={form.seoDescription}
+                    onChange={handleChange}
+                    placeholder="The summary that appears below your title in Google..."
+                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none min-h-[80px] leading-relaxed font-medium"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* FAQ BUILDER */}
+            <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-100">
+               <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-purple-50 rounded-2xl text-purple-600">
+                    <MessageCircle className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">FAQ Builder (AEO Support)</h2>
+                </div>
+                <Button 
+                  type="button" 
+                  onClick={addFAQ}
+                  variant="outline"
+                  className="rounded-xl border-purple-100 text-purple-600 hover:bg-purple-50 text-xs font-bold uppercase tracking-wider"
+                >
+                  <Plus className="w-3 h-3 mr-2" /> Add Question
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {form.faqs.map((faq, index) => (
+                  <div key={index} className="p-6 bg-gray-50 rounded-3xl border border-gray-100 relative group">
+                    <button 
+                      type="button"
+                      onClick={() => removeFAQ(index)}
+                      className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="space-y-4">
+                      <Input 
+                        value={faq.question}
+                        onChange={(e) => handleFAQChange(index, 'question', e.target.value)}
+                        placeholder="Question (e.g. Is 3 days enough for Varanasi?)"
+                        className="bg-white border-transparent focus:border-purple-200 rounded-xl font-bold"
+                      />
+                      <Textarea 
+                        value={faq.answer}
+                        onChange={(e) => handleFAQChange(index, 'answer', e.target.value)}
+                        placeholder="Detailed answer (40-80 words)..."
+                        className="bg-white border-transparent focus:border-purple-200 rounded-xl resize-none min-h-[80px]"
+                      />
+                    </div>
+                  </div>
+                ))}
+                {form.faqs.length === 0 && (
+                  <p className="text-center py-10 text-gray-400 text-sm italic">No FAQs added yet. Use FAQs to rank for "People Also Ask" queries.</p>
+                )}
+              </div>
+            </section>
+
             {/* HEADING SEPARATOR */}
             <div className="relative py-12">
               <div className="absolute inset-0 flex items-center">
@@ -455,11 +604,10 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                     name="authorRole"
                     value={form.authorRole}
                     onChange={handleChange}
-                    placeholder="e.g. Spiritual Travel Expert"
+                    placeholder="e.g. Founder, Experience My India"
                     className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium"
                   />
                 </div>
-
                 <div>
                   <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Estimated Read Time</label>
                   <Input
@@ -511,6 +659,28 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                   </div>
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Article Summary (Appears on Detail Page Header)</label>
+                  <Textarea 
+                    name="subtitle" 
+                    value={form.subtitle} 
+                    onChange={handleChange} 
+                    placeholder="20-30 words summarizing the story for the top of the article..."
+                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none min-h-[80px] leading-relaxed font-medium"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Quick Answer (TL;DR Box)</label>
+                  <Textarea 
+                    name="tldr" 
+                    value={form.tldr} 
+                    onChange={handleChange} 
+                    placeholder="60-80 words providing a direct answer..."
+                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none min-h-[100px] leading-relaxed font-medium"
+                  />
+                </div>
+
                 <div className="md:col-span-2 space-y-2">
                   <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Article Story (Rich Content)</label>
                   <div className="quill-wrapper rounded-3xl overflow-hidden border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-orange-200 transition-all min-h-[450px]">
@@ -526,60 +696,62 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Tags (comma-separated)</label>
-                  <Input
-                    name="tags"
-                    value={form.tags}
-                    onChange={handleChange}
-                    placeholder="Varanasi, Spiritual, Pilgrimage, Guide..."
-                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <QuoteIcon className="w-3 h-3" /> Impactful Quotes (one per line)
-                  </label>
-                  <Textarea
-                    name="quotes"
-                    value={form.quotes}
-                    onChange={handleChange}
-                    placeholder="Add powerful quotes to break up the text..."
-                    className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none min-h-[140px] leading-relaxed font-serif italic"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <ImageIcon className="w-3 h-3" /> Story Gallery (Image URLs or Uploads)
-                  </label>
-                  <div className="flex gap-2 h-full min-h-[140px]">
-                    <Textarea
-                      name="additionalImages"
-                      value={form.additionalImages}
-                      onChange={handleChange}
-                      placeholder="Image URLs or use the upload button to add more..."
-                      className="rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all resize-none flex-1 leading-relaxed font-medium"
-                    />
-                    <div className="flex flex-col gap-2">
-                      <input 
-                        type="file" 
-                        ref={galleryInputRef} 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={(e) => handleFileUpload(e, 'additionalImages')} 
-                      />
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => galleryInputRef.current?.click()}
-                        disabled={uploadingField === 'additionalImages'}
-                        className="flex-1 px-4 rounded-2xl border-gray-100 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-500 transition-all shadow-sm"
-                      >
-                        {uploadingField === 'additionalImages' ? '...' : <Upload className="w-4 h-4" />}
-                      </Button>
+                {/* RECOMMENDED PACKAGES BUILDER */}
+                <div className="md:col-span-2 mt-12 pt-12 border-t border-gray-100">
+                   <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-orange-50 rounded-2xl text-orange-600">
+                        <Plus className="w-6 h-6" />
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-900 tracking-tight">Recommended Tour Packages</h2>
                     </div>
+                    <Button 
+                      type="button" 
+                      onClick={addRecommendation}
+                      variant="outline"
+                      className="rounded-xl border-orange-100 text-orange-600 hover:bg-orange-50 text-xs font-bold uppercase tracking-wider"
+                    >
+                      <Plus className="w-3 h-3 mr-2" /> Add Package
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {form.recommendations.map((rec, index) => (
+                      <div key={index} className="p-6 bg-[#FEF3E8] rounded-3xl border border-orange-100 relative group">
+                        <button 
+                          type="button"
+                          onClick={() => removeRecommendation(index)}
+                          className="absolute top-4 right-4 p-2 text-orange-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1.5 block">Package Title</label>
+                            <Input 
+                              value={rec.title}
+                              onChange={(e) => handleRecommendationChange(index, 'title', e.target.value)}
+                              placeholder="e.g. 3 Days Divine Tour Package"
+                              className="bg-white border-transparent focus:border-orange-200 rounded-xl font-bold text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-orange-600 uppercase tracking-widest mb-1.5 block">Package Link</label>
+                            <Input 
+                              value={rec.url}
+                              onChange={(e) => handleRecommendationChange(index, 'url', e.target.value)}
+                              placeholder="/packages/ayodhya-3-days"
+                              className="bg-white border-transparent focus:border-orange-200 rounded-xl text-xs font-medium"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {form.recommendations.length === 0 && (
+                      <div className="md:col-span-2 text-center py-12 bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200">
+                        <p className="text-gray-400 text-sm font-medium italic">No recommended packages added yet. Link your tours here.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -735,7 +907,6 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
 
               <section className="px-8 relative">
                 <div className="max-w-[1280px] mx-auto flex flex-col lg:flex-row gap-12 relative">
-                  
                   {/* LEFT: SOCIAL SHARE (Restored) */}
                   <div className="hidden lg:block w-16 shrink-0 relative">
                     <div className="sticky top-32 flex flex-col gap-4">
@@ -878,28 +1049,5 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
         }
       `}</style>
     </div>
-  );
-}
-
-function FileText(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-      <path d="M10 9H8" />
-      <path d="M16 13H8" />
-      <path d="M16 17H8" />
-    </svg>
   );
 }

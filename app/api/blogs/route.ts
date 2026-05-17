@@ -22,7 +22,6 @@ export async function GET() {
     const blogs = await db
       .collection("blogs")
       .find({ status: "published" }, {
-        // Only project the fields needed for the blog card list
         projection: {
           _id: 0,
           id: 1,
@@ -30,7 +29,9 @@ export async function GET() {
           title: 1,
           subtitle: 1,
           preview: 1,
+          tldr: 1,
           category: 1,
+          region: 1,
           author: 1,
           date: 1,
           readTime: 1,
@@ -46,8 +47,10 @@ export async function GET() {
       slug: blog.slug,
       title: blog.title,
       subtitle: blog.subtitle,
-      preview: blog.preview,
+      preview: blog.preview || blog.subtitle,
+      tldr: blog.tldr,
       category: blog.category,
+      region: blog.region,
       author: blog.author,
       date: blog.date,
       readTime: blog.readTime,
@@ -59,7 +62,6 @@ export async function GET() {
       { success: true, data: blogCards, count: blogCards.length },
       {
         headers: {
-          // CDN serves cached response for 60 s; simultaneously revalidates in background for up to 5 min
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
         },
       }
@@ -72,13 +74,23 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, subtitle, preview, category, author, authorRole = "Travel Expert", date, readTime = "5 min read", thumbnailImage, coverImage, content, tags = [], quotes = [], additionalImages = [], status = "published" } = body;
+    const { 
+      title, subtitle, tldr, seoTitle, seoDescription, faqs = [],
+      recommendations = [],
+      category, region, author, authorRole = "Travel Expert", 
+      date, readTime = "5 min read", thumbnailImage, coverImage, 
+      content, status = "published" 
+    } = body;
 
     if (!title || !subtitle || !author || !date) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const db = await getDb();
+    const existing = await db.collection("blogs").findOne({ slug: baseSlug });
+    const slug = existing ? `${baseSlug}-${Date.now().toString().slice(-4)}` : baseSlug;
+
     const safeThumbnail = isValidImageValue(thumbnailImage)
       ? thumbnailImage
       : isValidImageValue(coverImage)
@@ -95,8 +107,14 @@ export async function POST(request: Request) {
       slug,
       title,
       subtitle,
-      preview: preview || subtitle,
+      preview: subtitle,
+      tldr,
+      seoTitle: seoTitle || title,
+      seoDescription: seoDescription || subtitle,
+      faqs,
+      recommendations,
       category: category || "Travel",
+      region: region || "Braj",
       author,
       authorRole,
       date,
@@ -104,14 +122,10 @@ export async function POST(request: Request) {
       thumbnailImage: safeThumbnail,
       coverImage: safeCover,
       content: content || "",
-      tags,
-      quotes,
-      additionalImages,
       status,
       createdAt: new Date().toISOString(),
     };
 
-    const db = await getDb();
     await db.collection("blogs").insertOne(newBlog);
 
     return NextResponse.json({ success: true, message: "Blog created successfully", data: newBlog }, { status: 201 });

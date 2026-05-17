@@ -26,11 +26,14 @@ const TestimonialsSection = dynamic(() => import("@/components/TestimonialsSecti
 const AboutSection = dynamic(() => import("@/components/AboutSection"), {
   loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
 });
-const BlogSection = dynamic(() => import("@/components/BlogSection"), {
-  loading: () => <div className="min-h-[500px] bg-muted/10 animate-pulse" />,
-});
 const CustomisedPackageSection = dynamic(() => import("@/components/CustomisedPackageSection"), {
   loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
+});
+const SpecialOffersSection = dynamic(() => import("@/components/SpecialOffersSection"), {
+  loading: () => <div className="min-h-[400px] bg-muted/10 animate-pulse" />,
+});
+const OfferBanner = dynamic(() => import("@/components/OfferBanner"), {
+  loading: () => <div className="min-h-[200px] bg-muted/10 animate-pulse" />,
 });
 
 export default function Home() {
@@ -41,7 +44,8 @@ export default function Home() {
       <InfoBannerStrip />
       <TestimonialsSection />
       <AboutSection />
-      <BlogSection />
+      <SpecialOffersSection className="pt-12 md:pt-16" />
+      <OfferBanner />
       <CustomisedPackageSection />
       <div className="w-full h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
     </div>

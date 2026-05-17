@@ -99,7 +99,7 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section id="testimonials" className="py-20 md:py-28 bg-white border-t border-gray-100 overflow-hidden">
+    <section id="testimonials" className="pt-12 pb-6 md:pt-16 md:pb-8 bg-white border-t border-gray-100 overflow-hidden">
       <div className="max-w-[1300px] mx-auto px-6 md:px-10 flex flex-col lg:flex-row gap-12 lg:gap-16 items-center lg:items-start">
         
         {/* LEFT SIDE - TRUST BANNER */}

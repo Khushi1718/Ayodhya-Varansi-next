@@ -46,6 +46,8 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
       main: '',
       gallery: ['', '', '', '']
     },
+    isOffer: false,
+    offerPercentage: '10% OFF',
     status: 'published'
   };
 
@@ -65,6 +67,8 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
           main: initialPackage.images?.main || '',
           gallery: initialPackage.images?.gallery || ['', '', '', '']
         },
+        isOffer: initialPackage.isOffer || false,
+        offerPercentage: initialPackage.offerPercentage || '10% OFF',
         status: initialPackage.status || 'published'
       });
     } else {
@@ -189,7 +193,9 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         itinerary: form.itinerary.filter(d => d.title.trim() && d.desc.trim()).length > 0
           ? form.itinerary.filter(d => d.title.trim() && d.desc.trim())
           : [{ day: 'Day 1', title: '', desc: '' }],
-        images: form.images
+        images: form.images,
+        isOffer: form.isOffer,
+        offerPercentage: form.offerPercentage
       };
 
       // Use id if available, otherwise use _id (MongoDB ID)
@@ -361,14 +367,53 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Offer Price</label>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Rating</label>
                   <Input
-                    name="price"
-                    value={form.price}
+                    name="rating"
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    max="5"
+                    value={form.rating}
                     onChange={handleChange}
-                    placeholder="e.g. ₹18,500"
-                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold text-orange-600"
+                    placeholder="e.g. 4.9"
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total Reviews</label>
+                  <Input
+                    name="reviews"
+                    type="number"
+                    value={form.reviews}
+                    onChange={handleChange}
+                    placeholder="e.g. 128"
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                    <span>Is Offer Package?</span>
+                    <input 
+                      type="checkbox" 
+                      name="isOffer" 
+                      checked={form.isOffer} 
+                      onChange={(e) => setForm(prev => ({ ...prev, isOffer: e.target.checked }))} 
+                      className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500 border-gray-300"
+                    />
+                  </label>
+                  <div className={`transition-all duration-300 ${form.isOffer ? 'opacity-100 h-12 mt-2' : 'opacity-30 h-12 mt-2 pointer-events-none'}`}>
+                    <Input
+                      name="offerPercentage"
+                      value={form.offerPercentage}
+                      onChange={handleChange}
+                      placeholder="e.g. 10% OFF"
+                      className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all"
+                      disabled={!form.isOffer}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -396,16 +441,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Savings Tag</label>
-                  <Input
-                    name="savings"
-                    value={form.savings}
-                    onChange={handleChange}
-                    placeholder="e.g. ₹5,500"
-                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all"
-                  />
-                </div>
+
               </div>
             </section>
 
@@ -563,7 +599,11 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                         <div className="relative h-48 rounded-2xl overflow-hidden mb-6 bg-gray-50 border border-gray-100">
                           {form.images.main ? <img src={form.images.main} alt="Preview" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-gray-200"><ImageIcon className="w-12 h-12" /></div>}
                           <div className="absolute top-4 left-4"><span className="px-3 py-1 bg-white/95 backdrop-blur shadow-sm rounded-full text-[9px] font-bold text-gray-900 uppercase tracking-wider">{form.destination || 'India'}</span></div>
-                          <div className="absolute top-4 right-4 bg-white/95 backdrop-blur shadow-sm px-2.5 py-1 rounded-full flex items-center gap-1 border border-gray-100"><Star size={12} className="text-orange-500 fill-orange-500" /><span className="text-xs font-bold text-gray-900">{form.rating}</span></div>
+                          {form.isOffer ? (
+                            <div className="absolute top-4 right-4 bg-[#00b67a] text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-[0_4px_12px_rgba(0,182,122,0.25)] z-10"><span className="text-[10px] font-bold uppercase tracking-wider">{form.offerPercentage}</span></div>
+                          ) : (
+                            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur shadow-sm px-2.5 py-1 rounded-full flex items-center gap-1 border border-gray-100"><Star size={12} className="text-orange-500 fill-orange-500" /><span className="text-xs font-bold text-gray-900">{form.rating}</span></div>
+                          )}
                         </div>
                         <h3 className="font-heading font-bold text-gray-900 text-xl leading-tight mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">{form.title || 'Untitled Package'}</h3>
                         <div className="flex items-center gap-3 text-gray-500 text-[11px] font-medium mb-4">
