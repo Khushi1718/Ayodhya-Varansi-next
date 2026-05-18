@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, MapPin, ArrowRight, ChevronLeft, ChevronRight, Star, Loader } from "lucide-react";
 import { useModal } from "@/lib/ModalContext";
+import { getPackageCardPoints } from "@/lib/packageText";
 
 import pkgAyodhya       from "@/assets/pkg-ayodhya.png";
 import pkgVaranasi      from "@/assets/pkg-varanasi.png";
@@ -20,24 +21,6 @@ const getPackageImage = (pkg: any) => {
   if (typeof candidate === "string" && candidate.trim()) return candidate;
   if (candidate && typeof candidate === "object" && "src" in candidate) return candidate;
   return pkgAyodhya;
-};
-
-const cleanCardText = (value: string) =>
-  value
-    .replace(/<[^>]*>?/gm, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
-
-const getCardKeyPoints = (pkg: any) => {
-  const keyPoints = Array.isArray(pkg.cardKeyPoints) ? pkg.cardKeyPoints : [];
-  const highlights = Array.isArray(pkg.highlights) ? pkg.highlights : [];
-  return (keyPoints.length > 0 ? keyPoints : highlights)
-    .map((item: string) => cleanCardText(item))
-    .filter(Boolean)
-    .slice(0, 3);
 };
 
 const getPackageRenderKey = (scope: string, index: number) => `${scope}-package-${index}`;
@@ -149,7 +132,7 @@ const PackagesSection = () => {
             tag: pkg.destination || 'Pilgrimage',
             title: pkg.title || 'Package Title',
             duration: pkg.duration || '3 Days · 2 Nights',
-            highlights: getCardKeyPoints(pkg),
+            highlights: getPackageCardPoints(pkg),
             places: pkg.highlights || [],
             rating: pkg.rating || 4.8,
             reviews: pkg.reviews || 100,

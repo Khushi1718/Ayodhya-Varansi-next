@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, MapPin, Star, ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import { useModal } from "@/lib/ModalContext";
+import { getPackageCardPoints } from "@/lib/packageText";
 
 
 
@@ -261,7 +262,7 @@ const SpecialOffersSection = ({
                     </div>
 
                     <div className="ps-card-highlights">
-                      {p.highlights?.map((h: string, highlightIndex: number) => (
+                      {getPackageCardPoints(p).map((h: string, highlightIndex: number) => (
                         <div key={`offer-${packageIndex}-highlight-${highlightIndex}`} className="ps-card-highlight-item">
                           <span className="ps-card-highlight-dot" />
                           {h}

@@ -2,13 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { 
   MapPin, Clock, Star, Check, X, Calendar, Shield, 
-  ChevronDown, ArrowRight, Share2,
-  ChevronLeft, ChevronRight, Phone, Award, ThumbsUp,
-  RotateCcw, Ban, CreditCard, CheckCircle, Info, Sparkles
+  ChevronDown, Share2, Phone, Award, ThumbsUp, Info, CheckCircle, ChevronLeft, ChevronRight,
+  RotateCcw, Ban, CreditCard, Bus, Hotel, Coffee, Flag
 } from "lucide-react";
 
 import CustomisedPackageModal from "@/components/CustomisedPackageModal";
@@ -21,153 +18,16 @@ import subImg2 from "@/assets/Cyberian birds on prayagraj.jpg";
 import subImg3 from "@/assets/ -8.jpg";
 import subImg4 from "@/assets/ -11.jpg";
 
-const API_BASE = "/api";
 
-// DUMMY DATA FOR TEMPLATE
-const dummyPackage = {
-  title: "Divine Ayodhya & Kashi Pilgrimage",
-  destination: "Ayodhya & Varanasi",
-  duration: "5 Days / 4 Nights",
-  rating: 4.9,
-  reviews: 128,
-  price: "₹18,500",
-  originalPrice: "₹24,000",
-  savings: "₹5,500",
-  about: "Embark on a deeply moving spiritual journey through two of India's most sacred cities. This curated experience takes you from the birthplace of Lord Rama in Ayodhya to the eternal ghats of Varanasi. Witness the spectacular Ganga Aarti, enjoy VIP darshan at key temples, and find peace with expert local guides who understand the true essence of these holy sites.",
-  highlights: [
-    "VIP Darshan at Ram Mandir, Ayodhya",
-    "Private boat ride during the mesmerizing Ganga Aarti",
-    "Exclusive Kashi Vishwanath Temple corridor tour",
-    "Premium Heritage Hotel stays",
-    "Chauffeur-driven AC vehicle for all transfers"
-  ],
-  itinerary: [
-    {
-      day: "Day 1",
-      title: "Arrival in Ayodhya & Evening Aarti",
-      desc: "Upon arrival in Ayodhya, our representative will greet you and transfer you to your premium hotel. In the evening, witness the divine Saryu River Aarti, a deeply peaceful experience to begin your pilgrimage."
-    },
-    {
-      day: "Day 2",
-      title: "Ram Mandir Darshan & Travel to Varanasi",
-      desc: "Early morning VIP access to the grand Ram Mandir. After breakfast, we drive to Varanasi (approx 4 hours). Check into your heritage property by the ghats."
-    },
-    {
-      day: "Day 3",
-      title: "Subah-e-Banaras & Temple Trails",
-      desc: "Start before dawn with a boat ride on the Ganges. Visit Kashi Vishwanath, Annapurna Temple, and Kaal Bhairav. Evening is reserved for the world-famous Ganga Aarti at Dashashwamedh Ghat."
-    },
-    {
-      day: "Day 4",
-      title: "Sarnath Excursion",
-      desc: "A short drive to Sarnath, where Lord Buddha gave his first sermon. Explore the ancient ruins, Dhamek Stupa, and the museum. Return to Varanasi for leisure time or silk shopping."
-    },
-    {
-      day: "Day 5",
-      title: "Departure",
-      desc: "After a final morning walk along the peaceful ghats and breakfast, transfer to Varanasi Airport/Railway Station with divine memories."
-    }
-  ],
-  included: [
-    "4 Nights premium accommodation",
-    "Daily buffet breakfast",
-    "Private AC vehicle for all transfers and sightseeing",
-    "Expert English/Hindi speaking local guide",
-    "VIP Darshan arrangements",
-    "Private boat ride in Varanasi"
-  ],
-  excluded: [
-    "Flight / Train tickets",
-    "Lunch and Dinner",
-    "Personal expenses",
-    "Camera fees at monuments"
-  ],
-  faq: [
-    {
-      q: "Is the VIP Darshan guaranteed?",
-      a: "Yes, our team pre-arranges the VIP access passes to ensure you have a smooth and uncrowded darshan experience."
-    },
-    {
-      q: "Are the hotels wheelchair accessible?",
-      a: "We handpick premium properties. If you have specific accessibility needs, please let us know so we can ensure the perfect room assignment."
-    },
-    {
-      q: "What is the best time to book this package?",
-      a: "Varanasi and Ayodhya are beautiful year-round, but October to March offers the most pleasant weather for exploring."
-    }
-  ],
-  reviewStats: {
-    average: 4.8,
-    total: 128,
-    distribution: [
-      { stars: 5, percentage: 78 },
-      { stars: 4, percentage: 22 },
-      { stars: 3, percentage: 0 },
-      { stars: 2, percentage: 0 },
-      { stars: 1, percentage: 0 }
-    ]
-  },
-  testimonials: [
-    {
-      name: "Aaryan Dwivedi",
-      location: "India",
-      rating: 5,
-      text: "Five days across Mathura, Vrindavan, Ayodhya, and Kashi felt spiritually powerful. The journey moved smoothly from Krishna's birthplace to Lord Ram's Ayodhya.",
-      avatar: "A"
-    },
-    {
-      name: "Gayathri Subramaniam",
-      location: "India",
-      rating: 5,
-      text: "The itinerary balanced temple visits and rest thoughtfully. Early darshan in Vrindavan and the evening Ganga Aarti in Kashi were highlights of our tour.",
-      avatar: "G"
-    },
-    {
-      name: "Rahul Sharma",
-      location: "Delhi",
-      rating: 5,
-      text: "Excellent arrangements. The VIP darshan at Ram Mandir was seamless and the hotel choices were truly premium. Highly recommended for families.",
-      avatar: "R"
-    },
-    {
-      name: "Priya Patel",
-      location: "Gujarat",
-      rating: 5,
-      text: "A truly divine experience. The boat ride in Varanasi during Aarti was magical. Everything was handled with great care and professionalism.",
-      avatar: "P"
-    },
-    {
-      name: "Sanjay Gupta",
-      location: "Mumbai",
-      rating: 5,
-      text: "The best pilgrimage experience I've had. The attention to detail in the itinerary and the quality of the guides made it very special.",
-      avatar: "S"
-    },
-    {
-      name: "Meera Iyer",
-      location: "Chennai",
-      rating: 5,
-      text: "Everything was perfectly coordinated. From the airport pickup to the temple visits, we didn't have to worry about a thing. Truly premium.",
-      avatar: "M"
-    },
-    {
-      name: "Vikram Singh",
-      location: "Punjab",
-      rating: 5,
-      text: "Highly professional service. The hotels were top-notch and the VIP access made a huge difference in our spiritual journey.",
-      avatar: "V"
-    }
-  ]
-};
 
-export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
-  const params = useParams();
-  const [pkg, setPkg] = useState<any>(initialPkg);
+export default function PackageTemplate({ initialPkg }: { initialPkg: Record<string, unknown> }) {
+  const [pkg, setPkg] = useState<Record<string, unknown> | any>(initialPkg as Record<string, unknown> | any);
   const [openDay, setOpenDay] = useState(0);
   const [openFaq, setOpenFaq] = useState<number>(-1);
   const [openPolicy, setOpenPolicy] = useState<number>(0);
   const [enquireOpen, setEnquireOpen] = useState(false);
   const [customiseOpen, setCustomiseOpen] = useState(false);
+  const [routeOpen, setRouteOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
@@ -179,6 +39,23 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
       setPkg(initialPkg);
     }
   }, [initialPkg]);
+
+  // Debug: log package payload to help trace CMS field shapes (remove in production)
+  useEffect(() => {
+    if (!pkg) return;
+    try {
+      // Lightweight logs for developer inspection
+      // eslint-disable-next-line no-console
+      console.log('[pkg debug] pkg:', pkg);
+      // eslint-disable-next-line no-console
+      console.log('[pkg debug] highlights:', pkg.highlights || pkg.keyFeatures || pkg.features || pkg.included);
+      // eslint-disable-next-line no-console
+      console.log('[pkg debug] route/journeyRoute:', pkg.route || pkg.journeyRoute || pkg.itinerary);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('pkg debug logging error', e);
+    }
+  }, [pkg]);
 
   // Auto-slide testimonials (Native Scroll)
   useEffect(() => {
@@ -255,6 +132,140 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
     }
   };
 
+  // --- Derive benefits & route data from CMS (support object or array shapes) ---
+  const cmsBenefitsRaw = pkg?.benefits || pkg?.includedBenefits || pkg?.features || [];
+  const derivedBenefits = {
+    transferIncluded: false,
+    stayIncluded: false,
+    breakfastIncluded: false,
+    sightseeingIncluded: false,
+  } as Record<string, boolean>;
+
+  if (Array.isArray(cmsBenefitsRaw)) {
+    cmsBenefitsRaw.forEach((b: string) => {
+      const s = String(b || "").toLowerCase();
+      if (s.includes("transfer")) derivedBenefits.transferIncluded = true;
+      if (s.includes("stay")) derivedBenefits.stayIncluded = true;
+      if (s.includes("breakfast")) derivedBenefits.breakfastIncluded = true;
+      if (s.includes("sightseeing") || s.includes("sight")) derivedBenefits.sightseeingIncluded = true;
+    });
+  } else if (cmsBenefitsRaw && typeof cmsBenefitsRaw === "object") {
+    // allow boolean flags from CMS
+    derivedBenefits.transferIncluded = !!cmsBenefitsRaw.transferIncluded;
+    derivedBenefits.stayIncluded = !!cmsBenefitsRaw.stayIncluded;
+    derivedBenefits.breakfastIncluded = !!cmsBenefitsRaw.breakfastIncluded;
+    derivedBenefits.sightseeingIncluded = !!cmsBenefitsRaw.sightseeingIncluded;
+  }
+
+  // Route data: support { overview, departure, arrival, stops: [] } or legacy shapes
+  const cmsRoute = pkg?.route || pkg?.journeyRoute || null;
+  const route = cmsRoute || (pkg.itinerary && (pkg.itinerary as any).length > 0 ? {
+    overview: undefined,
+    departure: ((pkg.itinerary as any)[0]?.title as string) || ((pkg.itinerary as any)[0]?.day as string) || "",
+    stops: (pkg.itinerary as any).slice(0, 3).map((d: any, i: number) => ({ title: (d.title as string) || (d.day as string) || `Stop ${i+1}`, desc: d.desc })),
+    arrival: ((pkg.itinerary as any)[(pkg.itinerary as any).length - 1]?.title as string) || "",
+  } : null);
+
+  // Derive a safe overview string preferring CMS-provided overview, then departure->arrival without accidental duplicates
+  // Prefer explicit CMS `from` / `to` fields (support multiple common keys)
+  const getFirst = (obj: any, keys: string[]) => {
+    if (!obj) return undefined;
+    for (const k of keys) {
+      const v = obj[k];
+      if (v && typeof v === 'string' && v.trim()) return v.trim();
+      if (v && typeof v === 'object') {
+        // common shape: { name: 'City' }
+        if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
+        if (typeof v.title === 'string' && v.title.trim()) return v.title.trim();
+      }
+    }
+    return undefined;
+  };
+
+  // Recursively search an object (depth-limited) for any of the candidate keys
+  const deepGetFirst = (obj: any, keys: string[], depth = 3): string | undefined => {
+    if (!obj || depth <= 0) return undefined;
+    if (typeof obj === 'string') return obj.trim() || undefined;
+    if (typeof obj !== 'object') return undefined;
+
+    for (const k of keys) {
+      if (k in obj) {
+        const v = obj[k];
+        if (typeof v === 'string' && v.trim()) return v.trim();
+        if (typeof v === 'object') {
+          if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
+          if (typeof v.title === 'string' && v.title.trim()) return v.title.trim();
+        }
+      }
+    }
+
+    // search nested objects/arrays
+    for (const val of Object.values(obj)) {
+      if (val && typeof val === 'object') {
+        const found = deepGetFirst(val, keys, depth - 1);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+
+  const cmsFrom = deepGetFirst(cmsRoute, ['from', 'source', 'origin', 'fromLocation', 'from_city', 'start']);
+  const cmsTo = deepGetFirst(cmsRoute, ['to', 'destination', 'dest', 'toLocation', 'to_city', 'end']);
+  const pkgFrom = deepGetFirst(pkg, ['from', 'origin', 'source', 'fromLocation', 'from_city']);
+  const pkgTo = deepGetFirst(pkg, ['to', 'destination', 'dest', 'toLocation', 'to_city']);
+  const cmsOverview = (cmsRoute && (cmsRoute.overview as string)) || undefined;
+  const routeDeparture = (route && (route.departure as string)) || pkgFrom || "";
+  const routeArrival = (route && (route.arrival as string)) || pkgTo || "";
+
+  let overview = "";
+  if (cmsFrom && cmsTo) overview = `${cmsFrom} → ${cmsTo}`;
+  else if (pkgFrom && pkgTo) overview = `${pkgFrom} → ${pkgTo}`;
+  else if (routeDeparture && routeArrival) overview = `${routeDeparture} → ${routeArrival}`;
+  else if (cmsOverview) overview = cmsOverview;
+  else {
+    if (routeDeparture) overview = routeDeparture;
+    else if (routeArrival) overview = routeArrival;
+  }
+
+  // Helper to extract a sensible from/to pair for a stop object or title string
+  const extractFromTo = (stop: any) => {
+    if (!stop) return { from: undefined, to: undefined };
+
+    // If stop is a simple string, try to split common separators
+    const title = typeof stop === 'string' ? stop : (stop.title || stop.name || '');
+
+    const splitTitle = (s: string) => {
+      if (!s) return null;
+      // Common separators: ' - ', ' to ', '→', '–'
+      const seps = ['→', ' - ', ' – ', ' to ', '–', '-'];
+      for (const sep of seps) {
+        if (s.includes(sep)) {
+          const parts = s.split(sep).map((p) => p.trim()).filter(Boolean);
+          if (parts.length >= 2) return { from: parts[0], to: parts.slice(1).join(' ')};
+        }
+      }
+      return null;
+    };
+
+    if (typeof stop === 'object') {
+      const titleFrom = typeof stop.title === 'string' ? stop.title.trim() : '';
+      const descTo = typeof stop.desc === 'string' ? stop.desc.trim() : '';
+      if (titleFrom && descTo) return { from: titleFrom, to: descTo };
+    }
+
+    // Prefer explicit fields on the stop object
+    const fromField = deepGetFirst(stop, ['from', 'source', 'origin', 'start', 'fromLocation', 'from_city', 'departure']);
+    const toField = deepGetFirst(stop, ['to', 'destination', 'dest', 'end', 'toLocation', 'to_city', 'arrival']);
+    if (fromField || toField) return { from: fromField, to: toField };
+
+    // Try parsing title
+    const parsed = splitTitle(String(title || ''));
+    if (parsed) return parsed;
+
+    // Fallback to title as 'from'
+    return { from: title || undefined, to: undefined };
+  };
+
   return (
     <main className="min-h-screen bg-[#fafaf8] pb-0">
       
@@ -278,7 +289,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
             <button 
               onClick={handleShare} 
               aria-label="Share this tour package"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all text-sm font-bold text-gray-600 shadow-sm shrink-0"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-50 border border-gray-100 hover:bg-orange-50 hover:border-orange-200 transition-all text-sm font-bold text-gray-700 shadow-md hover:shadow-lg shrink-0 hover:text-orange-600"
             >
                <Share2 size={18} /> Share
             </button>
@@ -382,20 +393,149 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
           
           {/* LEFT CONTENT */}
           <div className="w-full lg:w-[65%] space-y-16">
+
+            {/* Inline Benefits (CMS-driven) — Lucide icons, shown before About — ONLY CHECKED ITEMS */}
+            {(() => {
+              const benefitIcons: Record<string, any> = {
+                transferIncluded: Bus,
+                stayIncluded: Hotel,
+                breakfastIncluded: Coffee,
+                sightseeingIncluded: MapPin
+              };
+              const benefitLabels: Record<string, string> = {
+                transferIncluded: 'Transfer Included',
+                stayIncluded: 'Stay Included',
+                breakfastIncluded: 'Breakfast Included',
+                sightseeingIncluded: 'Sightseeing Included'
+              };
+              
+              const checkedBenefits = Object.keys(derivedBenefits)
+                .filter(key => derivedBenefits[key as string])
+                .map(key => ({ key, label: benefitLabels[key], Icon: benefitIcons[key] }));
+              
+              if (checkedBenefits.length === 0) return null;
+              
+              return (
+                <div className="mb-6">
+                  <div className="flex items-center gap-6 border-b pb-4 flex-wrap">
+                    {checkedBenefits.map(({ key, label, Icon }) => (
+                      <div key={key} className="flex items-center gap-2 text-sm text-orange-600">
+                        <Icon size={20} className="shrink-0" />
+                        <div className="font-medium">{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Route Overview pill (CMS-driven) — minimal design matching reference */}
+            {route && (
+              <div className="mb-8 space-y-3">
+                {/* Journey Route Heading */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1.5 h-6 bg-orange-400 rounded-full"></div>
+                  <span className="text-sm font-bold text-orange-500 uppercase tracking-widest">Journey Route</span>
+                </div>
+
+
+
+                {/* Route Toggle Button - prominent, theme-colored like reference */}
+                <button
+                  onClick={() => setRouteOpen(!routeOpen)}
+                  aria-expanded={routeOpen}
+                  className="w-full flex items-center justify-between gap-4 px-8 py-5 bg-gradient-to-r from-orange-400 to-orange-600 text-white rounded-xl shadow-md hover:shadow-xl transition-transform duration-200 text-left"
+                >
+                  <div className="flex-1">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-orange-100">Route overview</div>
+                    <div className="mt-1 text-lg font-bold leading-tight">{overview}</div>
+                  </div>
+                  <div className="flex items-center justify-center w-10 h-10 bg-white/20 rounded-full">
+                    <ChevronDown className={`transition-transform duration-300 ${routeOpen ? 'rotate-180' : ''} text-white`} size={18} />
+                  </div>
+                </button>
+
+                {/* Expanded Route Timeline */}
+                {routeOpen && (
+                  <div className="mt-3 p-3 rounded-2xl border border-orange-100/70 bg-gradient-to-b from-orange-50/35 via-white to-white shadow-sm" style={{ boxShadow: '0 8px 24px rgba(15,23,42,0.035)' }}>
+                    <div className="space-y-3 text-sm">
+                      {/* Departure */}
+                      <div className="flex gap-4 items-start">
+                        <div className="flex flex-col items-center mt-1">
+                          <div className="w-9 h-9 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center flex-shrink-0 transition-transform hover:scale-105">
+                            <MapPin size={16} />
+                          </div>
+                          {(route.stops && route.stops.length > 0) && <div className="w-px h-6 bg-orange-100 my-1" />}
+                        </div>
+                          <div className="py-0.5">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Departure</div>
+                          <div className="font-semibold text-gray-900 text-sm">{(route && route.departure) || pkgFrom || 'Departure'}</div>
+                        </div>
+                      </div>
+
+                      {/* Stops */}
+                      {route.stops && route.stops.map((stop: any, idx: number) => {
+                        const { from: stopFrom, to: stopTo } = extractFromTo(stop);
+                        const display = stopFrom && stopTo ? `${stopFrom} → ${stopTo}` : stopFrom || stop.title || `Stop ${idx + 1}`;
+                        return (
+                        <div key={idx} className="flex gap-4 items-start">
+                          <div className="flex flex-col items-center mt-1">
+                              <div className="w-8 h-8 rounded-full border border-gray-200 text-gray-700 flex items-center justify-center flex-shrink-0 text-sm font-semibold bg-white transition-colors hover:bg-[hsl(var(--primary))] hover:text-white">
+                                {idx + 1}
+                              </div>
+                              {idx < (route.stops as any).length - 1 && <div className="w-px h-6 bg-orange-100 my-1" />}
+                            </div>
+                            <div className="py-0.5">
+                              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Stop {idx + 1}</div>
+                              <div className="font-semibold text-gray-900 text-sm">{display}</div>
+                            </div>
+                        </div>
+                        );
+                      })}
+
+                      {/* Arrival */}
+                      <div className="flex gap-4 items-start">
+                        <div className="flex flex-col items-center mt-1">
+                          <div className="w-9 h-9 rounded-full bg-[hsl(var(--primary))] text-white flex items-center justify-center flex-shrink-0">
+                            <Flag size={16} />
+                          </div>
+                        </div>
+                        <div className="py-0.5">
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Final Arrival</div>
+                          <div className="font-semibold text-gray-900 text-sm">{(route && route.arrival) || pkgTo || 'Arrival'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Package Overview Section */}
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1.5 h-6 bg-orange-400 rounded-full"></div>
+                <span className="text-sm font-bold text-orange-500 uppercase tracking-widest">Package Overview</span>
+              </div>
+
+            </div>
             
             {/* Overview */}
             <div id="overview" className="space-y-6">
               <h2 className="font-heading text-2xl md:text-3xl font-bold text-gray-900">About the Journey</h2>
 
-              {/* About — render as rich HTML if from Quill, else plain text */}
-              {pkg.about && pkg.about.includes('<') ? (
-                <div
-                  className="text-gray-600 leading-relaxed text-[15px] md:text-base [&_p]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-4 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-800 [&_a]:text-orange-600 [&_a]:underline break-words"
-                  dangerouslySetInnerHTML={{ __html: pkg.about }}
-                />
-              ) : (
-                <p className="text-gray-600 leading-relaxed text-[15px] md:text-base break-words">{pkg.about}</p>
-              )}
+              {/* About Box with Orangish Background */}
+              <div className="p-6 rounded-2xl border-2 border-orange-100 bg-orange-40">
+                {/* About — render as rich HTML if from Quill, else plain text */}
+                {pkg.about && pkg.about.includes('<') ? (
+                  <div
+                    className="text-gray-700 leading-relaxed text-[15px] md:text-base [&_p]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-gray-900 [&_h2]:mt-4 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-3 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mb-1 [&_strong]:font-semibold [&_strong]:text-gray-800 [&_a]:text-orange-600 [&_a]:underline break-words"
+                    dangerouslySetInnerHTML={{ __html: pkg.about }}
+                  />
+                ) : (
+                  <p className="text-gray-700 leading-relaxed text-[15px] md:text-base break-words">{pkg.about}</p>
+                )}
+              </div>
 
               {/* Highlights — filter empty Quill output */}
               {(() => {
@@ -429,6 +569,8 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                 );
               })()}
             </div>
+
+            {/* Removed duplicated benefits/route block (moved earlier) */}
 
             {/* Itinerary */}
             <div id="day-by-day-itinerary">
@@ -468,64 +610,103 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                     <div className={`grid transition-all duration-300 ease-in-out ${openDay === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                       <div className="overflow-hidden">
                         <div className="px-6 pb-8 pt-0 md:pl-20 space-y-6">
-                          {/* Short Description */}
-                          <div className="p-6 bg-white rounded-2xl border border-gray-100/50">
-                            <p className="text-gray-600 leading-relaxed text-[15px] md:text-base break-words">{day.desc}</p>
-                            <div className="mt-4 flex flex-wrap gap-4">
-                               <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                  <MapPin size={12} className="text-orange-300" /> Sightseeing included
-                               </div>
-                               <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                                  <Check size={12} className="text-green-400" /> Breakfast included
-                               </div>
+                          {/* Unified Itinerary Description Card */}
+                          <div className={`p-6 bg-white rounded-2xl border ${day.details ? 'border-orange-100/50' : 'border-gray-100/50'} space-y-6`}>
+                            {day.desc && (
+                              <p className="text-gray-700 leading-relaxed text-[15px] md:text-base break-words font-medium">{day.desc}</p>
+                            )}
+
+                            {day.details && (
+                              <div className="space-y-4">
+                                <style>{`
+                                  .itinerary-details h1 { font-size: 1.875rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #111827; }
+                                  .itinerary-details h2 { font-size: 1.5rem; font-weight: bold; margin-top: 0.875rem; margin-bottom: 0.5rem; color: #111827; }
+                                  .itinerary-details h3 { font-size: 1.25rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
+                                  .itinerary-details h4 { font-size: 1.125rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
+                                  .itinerary-details p { color: #4b5563; line-height: 1.6; margin-bottom: 1rem; }
+                                  .itinerary-details strong { font-weight: 600; color: #1f2937; }
+                                  .itinerary-details em { font-style: italic; }
+                                  .itinerary-details ol, .itinerary-details ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+                                  .itinerary-details li { margin-bottom: 0.5rem; color: #4b5563; }
+                                  .itinerary-details ol { list-style-type: decimal; }
+                                  .itinerary-details ul { list-style-type: disc; }
+                                  .itinerary-pill-tag {
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 12px;
+                                    width: 100%;
+                                    margin: 16px 0;
+                                    padding: 14px 20px;
+                                    background-color: #fffbf7;
+                                    border-left: 4px solid #f97316;
+                                    border-top: 1px solid #ffedd5;
+                                    border-right: 1px solid #ffedd5;
+                                    border-bottom: 1px solid #ffedd5;
+                                    border-radius: 12px;
+                                    color: #4b5563;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    font-weight: 500;
+                                    cursor: default;
+                                    user-select: none;
+                                    white-space: normal;
+                                  }
+                                  .itinerary-pill-tag::before {
+                                    content: '';
+                                    display: block;
+                                    width: 8px;
+                                    height: 8px;
+                                    background-color: #f97316;
+                                    border-radius: 9999px;
+                                    flex-shrink: 0;
+                                  }
+                                  .itinerary-pill-tag strong {
+                                    font-weight: 700;
+                                    color: #1f2937;
+                                  }
+                                  .itinerary-pill-tag em {
+                                    font-style: italic;
+                                  }
+                                `}</style>
+                                <div className="itinerary-details text-gray-700 break-words max-h-[350px] overflow-y-auto pr-4 custom-scrollbar" dangerouslySetInnerHTML={{ __html: day.details }} />
+                              </div>
+                            )}
+
+                            {/* Standard Day Inclusions */}
+                            <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-4 font-sans">
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                <MapPin size={12} className="text-orange-300" /> Sightseeing included
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                                <Check size={12} className="text-green-400" /> Breakfast included
+                              </div>
                             </div>
                           </div>
 
-                          {/* Rich Text Details */}
-                          {day.details && (
-                            <div className="p-6 bg-white rounded-2xl border border-orange-100/50 space-y-4">
-                              <style>{`
-                                .itinerary-details h1 { font-size: 1.875rem; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; color: #111827; }
-                                .itinerary-details h2 { font-size: 1.5rem; font-weight: bold; margin-top: 0.875rem; margin-bottom: 0.5rem; color: #111827; }
-                                .itinerary-details h3 { font-size: 1.25rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
-                                .itinerary-details h4 { font-size: 1.125rem; font-weight: bold; margin-top: 0.75rem; margin-bottom: 0.5rem; color: #111827; }
-                                .itinerary-details p { color: #4b5563; line-height: 1.6; margin-bottom: 1rem; }
-                                .itinerary-details strong { font-weight: 600; color: #1f2937; }
-                                .itinerary-details em { font-style: italic; }
-                                .itinerary-details ol, .itinerary-details ul { margin-left: 1.5rem; margin-bottom: 1rem; }
-                                .itinerary-details li { margin-bottom: 0.5rem; color: #4b5563; }
-                                .itinerary-details ol { list-style-type: decimal; }
-                                .itinerary-details ul { list-style-type: disc; }
-                                .itinerary-pill-tag { display: inline-flex; align-items: center; padding: 2px 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 9999px; font-size: 11px; font-weight: 700; margin: 0 3px; cursor: default; user-select: none; vertical-align: middle; white-space: nowrap; }
-                              `}</style>
-                              <div className="itinerary-details text-gray-700 break-words max-h-[350px] overflow-y-auto pr-4 custom-scrollbar" dangerouslySetInnerHTML={{ __html: day.details }} />
-                            </div>
-                          )}
-
                           {/* Activity / Location Tags — matching the reference image */}
-                          {day.tags && day.tags.filter((t: any) => t.title?.trim()).length > 0 && (
+                          {day.tags && (day.tags as any).filter((t: any) => (t.title as string)?.trim()).length > 0 && (
                             <div className="p-6 bg-[#fbf8f1] rounded-2xl space-y-6">
                               <div>
                                 <h4 className="font-bold text-gray-900 text-lg mb-4">Places Covered</h4>
                                 <div className="space-y-3">
-                                  {day.tags.filter((t: any) => t.title?.trim()).map((tag: any, tagIdx: number) => (
+                                  {(day.tags as any).filter((t: any) => (t.title as string)?.trim()).map((tag: any, tagIdx: number) => (
                                     <div
-                                      key={tagIdx}
-                                      className="bg-white rounded-[14px] py-4 px-5 flex items-center gap-4 relative overflow-hidden"
-                                    >
-                                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500 rounded-l-[14px]"></div>
-                                      <span className="w-2.5 h-2.5 rounded-full bg-orange-400 shrink-0 opacity-80 ml-1" />
-                                      <span className="font-bold text-gray-900 text-[15px]">{tag.title}</span>
-                                    </div>
+                                          key={tagIdx}
+                                          className="bg-white rounded-2xl py-5 px-6 flex items-center gap-4 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow hover:-translate-y-0.5"
+                                        >
+                                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-orange-500 to-orange-400 rounded-l-2xl"></div>
+                                          <span className="w-3.5 h-3.5 rounded-full bg-orange-400 shrink-0 opacity-90 ml-1 border border-white shadow-sm" />
+                                          <span className="font-semibold text-gray-900 text-lg leading-snug">{tag.title}</span>
+                                        </div>
                                   ))}
                                 </div>
                               </div>
                               
                               {/* Detailed Notes (only when content exists) */}
-                              {day.tags.some((t: any) => t.content && t.content.trim() && t.content !== '<p><br></p>') && (
+                              {(day.tags as any).some((t: any) => (t.content as string) && (t.content as string).trim() && (t.content as string) !== '<p><br></p>') && (
                                 <div className="space-y-5 pt-4 mt-2 border-t border-orange-100/50 max-h-64 overflow-y-auto pr-3 custom-scrollbar">
-                                  {day.tags.filter((t: any) => t.title?.trim()).map((tag: any, tagIdx: number) => (
-                                    tag.content && tag.content.trim() && tag.content !== '<p><br></p>' ? (
+                                  {(day.tags as any).filter((t: any) => (t.title as string)?.trim()).map((tag: any, tagIdx: number) => (
+                                    (tag.content as string) && (tag.content as string).trim() && (tag.content as string) !== '<p><br></p>' ? (
                                       <div key={tagIdx}>
                                         <h5 className="font-bold text-gray-900 text-base mb-2">{tag.title} Experience</h5>
                                         <p className="text-gray-700 text-sm leading-relaxed break-words">{tag.content}</p>
@@ -557,7 +738,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                   What&apos;s Included
                 </h2>
                 <ul className="space-y-4 relative z-10">
-                  {pkg.included.map((item: string, i: number) => (
+                  {(pkg.included as string[]).map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-gray-700 text-[15px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                       {item}
@@ -575,7 +756,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                   What&apos;s Excluded
                 </h3>
                 <ul className="space-y-4 relative z-10">
-                  {pkg.excluded.map((item: string, i: number) => (
+                  {(pkg.excluded as string[]).map((item: string, i: number) => (
                     <li key={i} className="flex items-start gap-3 text-gray-700 text-[15px]">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
                       {item}
@@ -744,7 +925,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
          <div className="container mx-auto max-w-4xl relative z-10">
             <h2 className="font-heading text-2xl md:text-4xl font-bold text-gray-900 mb-12 text-center">Frequently Asked Questions</h2>
             <div className="space-y-4">
-              {pkg.faq.map((f: any, i: number) => (
+              {(pkg.faq as any[]).map((f: any, i: number) => (
                 <div key={i} className={`group border rounded-[24px] overflow-hidden bg-white transition-all duration-300 ${openFaq === i ? 'border-orange-200 shadow-xl shadow-orange-50/50' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
                   <button 
                     onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
@@ -758,7 +939,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                   <div className={`grid transition-all duration-300 ease-in-out ${openFaq === i ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                     <div className="overflow-hidden">
                       <div className="px-6 pb-6 pt-0">
-                        <p className="text-gray-600 text-[15px] leading-relaxed">{f.a}</p>
+                        <p className="text-gray-600 text-[15px] leading-relaxed">{f.a as string}</p>
                       </div>
                     </div>
                   </div>
@@ -851,7 +1032,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                   >
                      {pkg.testimonials && pkg.testimonials.length > 0 ? (
-                        pkg.testimonials.map((t: any, i: number) => (
+                        (pkg.testimonials as any[]).map((t: any, i: number) => (
                           <div 
                             key={i} 
                             className="snap-start w-[280px] min-w-[280px] sm:w-[320px] sm:min-w-[320px] md:w-[400px] md:min-w-[400px] bg-white border border-gray-100 rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] flex-shrink-0 flex flex-col group relative"
@@ -888,7 +1069,7 @@ export default function PackageTemplate({ initialPkg }: { initialPkg: any }) {
                               `}</style>
                               <div className="text-gray-600 text-[15px] md:text-base leading-relaxed mb-0 font-medium italic break-words min-w-0">
                                 &quot;
-                                {t.review && t.review.includes('<') ? (
+                                {(t.review as string) && (t.review as string).includes('<') ? (
                                   <div className="testimonial-review break-words inline" dangerouslySetInnerHTML={{ __html: t.review }} />
                                 ) : (
                                   <span className="break-words">{t.review || ''}</span>

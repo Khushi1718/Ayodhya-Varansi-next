@@ -12,6 +12,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Clock, MapPin, Star, SlidersHorizontal, Loader, Tag } from "lucide-react";
 import Link from "next/link";
 import pkgAyodhya from "@/assets/pkg-ayodhya.png";
+import { getPackageCardPoints } from "@/lib/packageText";
 
 const destinations = ["Ayodhya", "Varanasi", "Ayodhya + Varanasi"];
 const durations = [
@@ -190,6 +191,7 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-4">
                 {filtered.map((pkg, i) => {
                   const packageImage = getPackageImage(pkg);
+                  const cardPoints = getPackageCardPoints(pkg);
                   return (
                   <div
                     key={pkg.slug || pkg.id || pkg.title || i}
@@ -224,20 +226,16 @@ export default function PackagesContent({ initialPackages }: { initialPackages: 
                         <span className="flex items-center gap-1"><Clock size={13} /> {pkg.duration}</span>
                         <span className="flex items-center gap-1"><MapPin size={13} /> India</span>
                       </div>
-                      <ul className="space-y-1.5">
-                        {((pkg.cardKeyPoints && pkg.cardKeyPoints.filter((k: string) => k?.trim()).length > 0)
-                          ? pkg.cardKeyPoints.filter((k: string) => k?.trim())
-                          : (pkg.highlights || []).slice(0, 3)
-                        ).map((h: string, hi: number) => {
-                          const cleanText = h.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-                          return (
+                      {cardPoints.length > 0 && (
+                        <ul className="space-y-1.5">
+                          {cardPoints.map((point: string, hi: number) => (
                             <li key={hi} className="text-sm text-muted-foreground flex items-start gap-2 min-w-0">
                               <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0 mt-1.5" />
-                              <span className="flex-1 min-w-0 break-words line-clamp-2">{cleanText}</span>
+                              <span className="flex-1 min-w-0 break-words line-clamp-2">{point}</span>
                             </li>
-                          );
-                        })}
-                      </ul>
+                          ))}
+                        </ul>
+                      )}
                       <div className="flex gap-2 pt-3 border-t border-border">
                         <Link href={`/packages/${pkg.slug || 'template'}`} className="btn-outline-divine text-xs py-2 px-4 flex-1 text-center flex items-center justify-center">View Details</Link>
                         <button onClick={openEnquiry} className="btn-divine text-xs py-2 px-4 flex-1">Enquire Now</button>

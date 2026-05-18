@@ -491,11 +491,16 @@ export default function Navbar() {
   const [active, setActive] = useState<Menu>(null);
   const [mobileExp, setMobileExp] = useState<Menu>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", h);
     return () => window.removeEventListener("scroll", h);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   const enter = (m: Menu) => { if (timer.current) clearTimeout(timer.current); setActive(m); };
@@ -792,7 +797,7 @@ export default function Navbar() {
                     {item.label}
                     <ChevronDown size={13} className={`transition-transform duration-200 ${active === item.key ? "rotate-180" : ""}`} />
                   </Link>
-                  {item.key === "packages" && <PackagesMega visible={active === "packages"} />}
+                  {mounted && item.key === "packages" && <PackagesMega visible={active === "packages"} />}
                 </div>
               ) : (
                 <Link key={item.label} href={item.href} className="nav-trigger text-gray-700 hover:text-primary">

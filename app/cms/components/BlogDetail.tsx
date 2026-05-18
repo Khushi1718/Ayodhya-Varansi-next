@@ -263,19 +263,33 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
   };
 
   const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link', 'clean']
-    ],
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link', 'clean']
+      ],
+      handlers: {
+        clean: function (this: any) {
+          const quill = this.quill;
+          const range = quill.getSelection();
+          if (range) {
+            const currentFormat = quill.getFormat(range);
+            const hasColor = currentFormat['color'] === '#ea580c';
+            quill.format('color', hasColor ? false : '#ea580c', 'user');
+          }
+        }
+      }
+    }
   }), []);
 
   const quillFormats = [
     'header',
     'bold', 'italic', 'underline', 'strike',
     'list',
-    'link'
+    'link',
+    'color'
   ];
 
   const renderPremiumContent = (html: string) => {
@@ -687,7 +701,7 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
 
                 <div className="md:col-span-2 space-y-2">
                   <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Article Story (Rich Content)</label>
-                  <div className="quill-wrapper rounded-3xl overflow-hidden border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-orange-200 transition-all min-h-[450px]">
+                  <div className="quill-wrapper rounded-3xl overflow-visible border border-gray-100 bg-gray-50 focus-within:bg-white focus-within:border-orange-200 transition-all min-h-[450px]">
                     <ReactQuill 
                       theme="snow"
                       value={form.content}
@@ -983,25 +997,31 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
       )}
 
       <style>{`
+        /* Custom Modern Quill Snow Theme Overrides */
         .quill-wrapper .ql-toolbar.ql-snow {
-          border: none;
-          background: #fff;
-          padding: 1rem;
-          border-bottom: 1px solid #f3f4f6;
+          border: none !important;
+          border-bottom: 1px solid #f3f4f6 !important;
+          background-color: #fafaf9 !important;
+          padding: 10px 14px !important;
           display: flex;
           flex-wrap: wrap;
           gap: 0.5rem;
+          border-top-left-radius: 24px !important;
+          border-top-right-radius: 24px !important;
         }
         .quill-wrapper .ql-container.ql-snow {
-          border: none;
-          font-family: inherit;
-          font-size: 1rem;
+          border: none !important;
+          font-family: inherit !important;
+          font-size: 15px !important;
+          border-bottom-left-radius: 24px !important;
+          border-bottom-right-radius: 24px !important;
         }
         .quill-wrapper .ql-editor {
-          padding: 2rem;
-          min-height: 400px;
-          line-height: 1.8;
-          color: #374151;
+          min-height: 400px !important;
+          padding: 24px !important;
+          font-size: 15px !important;
+          line-height: 1.8 !important;
+          color: #374151 !important;
         }
         .quill-wrapper .ql-editor p {
           margin-bottom: 1.5rem;
@@ -1012,6 +1032,103 @@ export default function BlogDetail({ blog, onDeleted, onCreated, onBack, onViewD
           margin-top: 2rem;
           margin-bottom: 1rem;
           color: #111827;
+        }
+
+        /* Dropdown Header Picker Aesthetic Customizations */
+        .quill-wrapper .ql-snow .ql-picker {
+          color: #4b5563 !important;
+          font-weight: 600 !important;
+          font-size: 13px !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker-label {
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 8px !important;
+          padding: 4px 10px !important;
+          background-color: #ffffff !important;
+          transition: all 0.2s !important;
+          height: 32px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker-label:hover {
+          background-color: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+          border-color: #f97316 !important;
+          background-color: #fffbf7 !important;
+          box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1) !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker-options {
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 12px !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+          background-color: #ffffff !important;
+          padding: 6px !important;
+          z-index: 9999 !important;
+          margin-top: 4px !important;
+          min-width: 140px !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker-item {
+          padding: 6px 12px !important;
+          border-radius: 6px !important;
+          color: #4b5563 !important;
+          font-size: 13px !important;
+          transition: all 0.15s !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker-item:hover, .quill-wrapper .ql-snow .ql-picker-item.ql-selected {
+          background-color: #fff7ed !important;
+          color: #ea580c !important;
+        }
+        /* Header option text display names */
+        .quill-wrapper .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before {
+          content: 'Heading 1' !important;
+          font-size: 16px !important;
+          font-weight: 700 !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before {
+          content: 'Heading 2' !important;
+          font-size: 14px !important;
+          font-weight: 600 !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before {
+          content: 'Heading 3' !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+        }
+        .quill-wrapper .ql-snow .ql-picker.ql-header .ql-picker-item:not([data-value])::before {
+          content: 'Normal Text' !important;
+          font-size: 13px !important;
+          font-weight: 400 !important;
+        }
+
+        /* Orange Text Color Toggle Button (ql-clean) Stylings */
+        .ql-snow.ql-toolbar button.ql-clean {
+          transition: all 0.2s !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean:hover {
+          background: #fff7ed !important;
+          border-radius: 4px !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean:hover svg stroke {
+          stroke: #ea580c !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean:hover svg fill {
+          fill: #ea580c !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean.ql-active {
+          background: #fff7ed !important;
+          border-radius: 4px !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean.ql-active svg stroke {
+          stroke: #ea580c !important;
+        }
+        .ql-snow.ql-toolbar button.ql-clean.ql-active svg fill {
+          fill: #ea580c !important;
         }
         
         .premium-article-content {

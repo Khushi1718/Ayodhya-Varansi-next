@@ -21,22 +21,19 @@ const ReactQuill = dynamic(
     const { default: RQ, Quill } = await import('react-quill-new');
 
     if (!Quill.imports['formats/pill']) {
-      const Embed = Quill.import('blots/embed') as any;
-      class PillBlot extends Embed {
-        static create(value: string) {
+      const Block = Quill.import('blots/block') as any;
+      class PillBlot extends Block {
+        static create() {
           const node = super.create() as HTMLElement;
-          node.textContent = value;
-          node.setAttribute('data-value', value);
-          node.setAttribute('contenteditable', 'false');
-          node.title = 'Click × to delete this tag';
+          node.setAttribute('class', 'itinerary-pill-tag');
           return node;
         }
-        static value(node: HTMLElement) {
-          return node.getAttribute('data-value') || node.textContent || '';
+        static formats(node: HTMLElement) {
+          return node.classList.contains('itinerary-pill-tag') ? true : undefined;
         }
       }
       PillBlot.blotName = 'pill';
-      PillBlot.tagName = 'span';
+      PillBlot.tagName = 'div';
       PillBlot.className = 'itinerary-pill-tag';
       Quill.register(PillBlot, true);
     }
@@ -48,15 +45,14 @@ const ReactQuill = dynamic(
   }
 );
 
-// Pill toolbar handler — inserts a pill embed at cursor
+// Pill toolbar handler — toggles the pill block format
 const pillHandler = function (this: any) {
-  const label = window.prompt('Enter tag/chip label (e.g. Gokul Temples):');
-  if (label && label.trim()) {
-    const quill = this.quill;
-    const range = quill.getSelection(true);
-    const idx = range ? range.index : quill.getLength();
-    quill.insertEmbed(idx, 'pill', label.trim(), 'user');
-    quill.setSelection(idx + 1, 0);
+  const quill = this.quill;
+  const range = quill.getSelection(true);
+  if (range) {
+    const currentFormat = quill.getFormat(range);
+    const hasTag = !!currentFormat['pill'];
+    quill.formatLine(range.index, range.length, 'pill', !hasTag, 'user');
   }
 };
 
@@ -71,17 +67,53 @@ const itineraryModules = {
       ['pill'],
       ['clean'],
     ],
-    handlers: { pill: pillHandler },
+    handlers: { 
+      pill: pillHandler,
+      clean: function (this: any) {
+        const quill = this.quill;
+        const range = quill.getSelection();
+        if (range) {
+          const currentFormat = quill.getFormat(range);
+          const hasColor = currentFormat['color'] === '#ea580c';
+          quill.format('color', hasColor ? false : '#ea580c', 'user');
+        }
+      }
+    },
   },
+};
+
+// Shared modules for all other rich-text editors in PackageDetail
+const simpleQuillModules = {
+  toolbar: {
+    container: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['link'],
+      ['clean'],
+    ],
+    handlers: {
+      clean: function (this: any) {
+        const quill = this.quill;
+        const range = quill.getSelection();
+        if (range) {
+          const currentFormat = quill.getFormat(range);
+          const hasColor = currentFormat['color'] === '#ea580c';
+          quill.format('color', hasColor ? false : '#ea580c', 'user');
+        }
+      }
+    }
+  }
 };
 
 const API_BASE = "/api";
 
-type PackageForm = Omit<Package, 'id' | 'slug' | 'knowBeforeYouGo' | 'groundTruth' | 'testimonials' | 'cardKeyPoints'> & {
+type PackageForm = Omit<Package, 'id' | 'slug' | 'knowBeforeYouGo' | 'groundTruth' | 'testimonials' | 'cardKeyPoints' | 'benefits'> & {
   cardKeyPoints: string[];
   knowBeforeYouGo: string[];
   groundTruth: GroundTruth[];
   testimonials: Testimonial[];
+  benefits: Record<string, boolean>;
 };
 
 export default function PackageDetail({ packageData: initialPackage, onDeleted, onCreated, onBack, onViewDrafts }: PackageDetailProps) {
@@ -121,7 +153,9 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
     status: 'published',
     knowBeforeYouGo: [''],
     groundTruth: [{ title: '', description: '' }],
-    testimonials: [{ name: '', rating: 5, review: '', avatar: '' }]
+    testimonials: [{ name: '', rating: 5, review: '', avatar: '' }],
+    benefits: { transferIncluded: false, stayIncluded: false, breakfastIncluded: false, sightseeingIncluded: false },
+    route: { overview: '', departure: '', arrival: '', stops: [{ title: '', desc: '' }] }
   };
 
   const [form, setForm] = useState(initialFormState);
@@ -154,6 +188,9 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
           ? initialPackage.groundTruth 
           : [{ title: '', description: '' }],
         testimonials: initialPackage.testimonials || [{ name: '', rating: 5, review: '', avatar: '' }]
+        ,
+        benefits: (initialPackage.benefits && !Array.isArray(initialPackage.benefits) ? initialPackage.benefits : { transferIncluded: false, stayIncluded: false, breakfastIncluded: false, sightseeingIncluded: false }) as Record<string, boolean>,
+        route: initialPackage.route || { overview: '', departure: '', arrival: '', stops: [{ title: '', desc: '' }] }
       });
     } else {
       setForm(initialFormState);
@@ -239,6 +276,38 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
   const removeGroundTruth = (index: number) => {
     const newGroundTruth = (form.groundTruth || []).filter((_, i) => i !== index);
     setForm(prev => ({ ...prev, groundTruth: newGroundTruth.length ? newGroundTruth : [{ title: '', description: '' }] }));
+  };
+
+  // Benefits handlers
+  const toggleBenefit = (key: 'transferIncluded' | 'stayIncluded' | 'breakfastIncluded' | 'sightseeingIncluded') => {
+    setForm(prev => ({ ...prev, benefits: { ...(prev.benefits || {}), [key]: !(prev.benefits?.[key] || false) } }));
+  };
+
+  // Route handlers
+  const handleRouteChange = (field: 'overview' | 'departure' | 'arrival', value: string) => {
+    setForm(prev => {
+      const updatedRoute = { ...(prev.route || {}), [field]: value };
+      const source = updatedRoute.departure || '';
+      const dest = updatedRoute.arrival || '';
+      updatedRoute.overview = source && dest ? `${source} → ${dest}` : (source || dest || '');
+      return { ...prev, route: updatedRoute };
+    });
+  };
+
+  const addRouteStop = () => {
+    const currentStops = (form.route?.stops as any) || [{ title: '', desc: '' }];
+    setForm(prev => ({ ...prev, route: { ...(prev.route || {}), stops: [...currentStops, { title: '', desc: '' }] } }));
+  };
+
+  const removeRouteStop = (idx: number) => {
+    const stops = ((form.route?.stops || []) as any).filter((_: any, i: number) => i !== idx);
+    setForm(prev => ({ ...prev, route: { ...(prev.route || {}), stops: stops.length > 0 ? stops : [{ title: '', desc: '' }] } }));
+  };
+
+  const handleRouteStopChange = (idx: number, field: 'title' | 'desc', value: string) => {
+    const stops = [ ...((form.route?.stops as any) || []) ];
+    stops[idx] = { ...stops[idx], [field]: value };
+    setForm(prev => ({ ...prev, route: { ...(prev.route || {}), stops } }));
   };
 
   const handleFAQChange = (index: number, field: keyof FAQ, value: string) => {
@@ -335,6 +404,10 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
         testimonials: form.testimonials!.filter(t => t.name.trim() && t.review.trim()).length > 0
           ? form.testimonials!.filter(t => t.name.trim() && t.review.trim())
           : [{ name: '', rating: 5, review: '', avatar: '' }]
+        ,
+        // New CMS fields
+        benefits: form.benefits || { transferIncluded: false, stayIncluded: false, breakfastIncluded: false, sightseeingIncluded: false },
+        route: form.route || { overview: '', departure: '', arrival: '', stops: [{ title: '', desc: '' }] }
       };
 
       // Use id if available, otherwise use _id (MongoDB ID)
@@ -627,15 +700,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                       value={form.about}
                       onChange={(content) => setForm(prev => ({ ...prev, about: content }))}
                       theme="snow"
-                      modules={{
-                        toolbar: [
-                          [{ header: [1, 2, 3, false] }],
-                          ['bold', 'italic', 'underline'],
-                          [{ list: 'ordered' }, { list: 'bullet' }],
-                          ['link'],
-                          ['clean'],
-                        ],
-                      }}
+                      modules={simpleQuillModules}
                     />
                   </div>
                 </div>
@@ -667,12 +732,169 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                           </div>
                           {/* Pill button icon CSS */}
                           <style>{`
-                            .ql-pill::before { content: '⬟ Tag'; font-size: 10px; font-weight: 700; color: #c2410c; }
-                            .ql-snow .ql-toolbar .ql-pill { padding: 1px 8px; border: 1px solid #fed7aa !important; border-radius: 999px; background: #fff7ed; height: 22px; display: inline-flex; align-items: center; }
-                            .ql-snow .ql-toolbar .ql-pill:hover { background: #ffedd5; }
-                            .ql-editor .itinerary-pill-tag { display: inline-flex; align-items: center; padding: 2px 10px; background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c; border-radius: 9999px; font-size: 11px; font-weight: 700; margin: 0 3px; cursor: default; user-select: none; vertical-align: middle; }
+                            .ql-pill::before { content: '⬟ Tag'; font-size: 10px; font-weight: 700; color: #c2410c; transition: color 0.2s !important; }
+                            .ql-snow .ql-toolbar .ql-pill { padding: 1px 8px; border: 1px solid #fed7aa !important; border-radius: 999px; background: #fff7ed; height: 22px; display: inline-flex; align-items: center; transition: all 0.2s !important; }
+                            .ql-snow .ql-toolbar .ql-pill:hover { background: #ffedd5; border-color: #f97316 !important; }
+                            .ql-snow .ql-toolbar .ql-pill.ql-active { background: #ea580c !important; border-color: #c2410c !important; box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2) !important; }
+                            .ql-snow .ql-toolbar .ql-pill.ql-active::before { color: #ffffff !important; }
+                            .ql-editor .itinerary-pill-tag {
+                              display: flex !important;
+                              align-items: center !important;
+                              gap: 12px !important;
+                              width: 100% !important;
+                              margin: 16px 0 !important;
+                              padding: 14px 20px !important;
+                              background-color: #fffbf7 !important;
+                              border-left: 4px solid #f97316 !important;
+                              border-top: 1px solid #ffedd5 !important;
+                              border-right: 1px solid #ffedd5 !important;
+                              border-bottom: 1px solid #ffedd5 !important;
+                              border-radius: 12px !important;
+                              color: #4b5563 !important;
+                              font-size: 14px !important;
+                              line-height: 1.5 !important;
+                              font-weight: 500 !important;
+                              white-space: normal !important;
+                            }
+                            .ql-editor .itinerary-pill-tag::before {
+                              content: '' !important;
+                              display: block !important;
+                              width: 8px !important;
+                              height: 8px !important;
+                              background-color: #f97316 !important;
+                              border-radius: 9999px !important;
+                              flex-shrink: 0 !important;
+                            }
+                            .ql-editor .itinerary-pill-tag strong {
+                              font-weight: 700 !important;
+                              color: #1f2937 !important;
+                            }
+                            .ql-editor .itinerary-pill-tag em {
+                              font-style: italic !important;
+                            }
+                            
+                            /* Custom Modern Quill Snow Theme Overrides */
+                            .ql-toolbar.ql-snow {
+                              border: none !important;
+                              border-bottom: 1px solid #f3f4f6 !important;
+                              border-top-left-radius: 16px !important;
+                              border-top-right-radius: 16px !important;
+                              background-color: #fafaf9 !important;
+                              padding: 10px 14px !important;
+                            }
+                            .ql-container.ql-snow {
+                              border: none !important;
+                              border-bottom-left-radius: 16px !important;
+                              border-bottom-right-radius: 16px !important;
+                              font-family: inherit !important;
+                              font-size: 15px !important;
+                            }
+                            .ql-editor {
+                              min-height: 200px !important;
+                              padding: 20px !important;
+                              font-size: 15px !important;
+                              line-height: 1.6 !important;
+                              color: #374151 !important;
+                            }
+
+                            /* Dropdown Header Picker Aesthetic Customizations */
+                            .ql-snow .ql-picker {
+                              color: #4b5563 !important;
+                              font-weight: 600 !important;
+                              font-size: 13px !important;
+                            }
+                            .ql-snow .ql-picker-label {
+                              border: 1px solid #e2e8f0 !important;
+                              border-radius: 8px !important;
+                              padding: 4px 10px !important;
+                              background-color: #ffffff !important;
+                              transition: all 0.2s !important;
+                              height: 32px !important;
+                              display: flex !important;
+                              align-items: center !important;
+                              justify-content: space-between !important;
+                            }
+                            .ql-snow .ql-picker-label:hover {
+                              background-color: #f8fafc !important;
+                              border-color: #cbd5e1 !important;
+                              color: #0f172a !important;
+                            }
+                            .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+                              border-color: #f97316 !important;
+                              background-color: #fffbf7 !important;
+                              box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1) !important;
+                            }
+                            .ql-snow .ql-picker-options {
+                              border: 1px solid #e2e8f0 !important;
+                              border-radius: 12px !important;
+                              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+                              background-color: #ffffff !important;
+                              padding: 6px !important;
+                              z-index: 9999 !important;
+                              margin-top: 4px !important;
+                              min-width: 140px !important;
+                            }
+                            .ql-snow .ql-picker-item {
+                              padding: 6px 12px !important;
+                              border-radius: 6px !important;
+                              color: #4b5563 !important;
+                              font-size: 13px !important;
+                              transition: all 0.15s !important;
+                              display: flex !important;
+                              align-items: center !important;
+                            }
+                            .ql-snow .ql-picker-item:hover, .ql-snow .ql-picker-item.ql-selected {
+                              background-color: #fff7ed !important;
+                              color: #ea580c !important;
+                            }
+                            /* Header option text display names */
+                            .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before {
+                              content: 'Heading 1' !important;
+                              font-size: 16px !important;
+                              font-weight: 700 !important;
+                            }
+                            .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before {
+                              content: 'Heading 2' !important;
+                              font-size: 14px !important;
+                              font-weight: 600 !important;
+                            }
+                            .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before {
+                              content: 'Heading 3' !important;
+                              font-size: 13px !important;
+                              font-weight: 600 !important;
+                            }
+                            .ql-snow .ql-picker.ql-header .ql-picker-item:not([data-value])::before {
+                              content: 'Normal Text' !important;
+                              font-size: 13px !important;
+                              font-weight: 400 !important;
+                            }
+
+                            /* Orange Text Color Toggle Button (ql-clean) Stylings */
+                            .ql-snow.ql-toolbar button.ql-clean {
+                              transition: all 0.2s !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean:hover {
+                              background: #fff7ed !important;
+                              border-radius: 4px !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean:hover svg stroke {
+                              stroke: #ea580c !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean:hover svg fill {
+                              fill: #ea580c !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean.ql-active {
+                              background: #fff7ed !important;
+                              border-radius: 4px !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean.ql-active svg stroke {
+                              stroke: #ea580c !important;
+                            }
+                            .ql-snow.ql-toolbar button.ql-clean.ql-active svg fill {
+                              fill: #ea580c !important;
+                            }
                           `}</style>
-                          <div className="bg-white rounded-2xl border border-white shadow-sm overflow-hidden">
+                          <div className="bg-white rounded-2xl border border-white shadow-sm overflow-visible">
                             <ReactQuill
                               value={day.details || ''}
                               onChange={(content) => handleItineraryChange(idx, 'details', content)}
@@ -687,6 +909,64 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                 </div>
 
                 {/* Array Sections: Highlights, Included, Excluded, FAQ */}
+                  {/* Benefits (tick boxes) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Benefits (tick to include)</label>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                        <input type="checkbox" checked={!!form.benefits?.transferIncluded} onChange={() => toggleBenefit('transferIncluded')} />
+                        <span className="text-sm font-medium">Transfer Included</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                        <input type="checkbox" checked={!!form.benefits?.stayIncluded} onChange={() => toggleBenefit('stayIncluded')} />
+                        <span className="text-sm font-medium">Stay Included</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                        <input type="checkbox" checked={!!form.benefits?.breakfastIncluded} onChange={() => toggleBenefit('breakfastIncluded')} />
+                        <span className="text-sm font-medium">Breakfast Included</span>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                        <input type="checkbox" checked={!!form.benefits?.sightseeingIncluded} onChange={() => toggleBenefit('sightseeingIncluded')} />
+                        <span className="text-sm font-medium">Sightseeing Included</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Route configuration — exactly match CMS reference */}
+                  <div className="space-y-6 p-6 bg-white rounded-2xl border border-blue-100">
+                    <h3 className="text-xl font-bold text-gray-900">Route Configuration</h3>
+                    
+                    {/* Source (Fixed) */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Source (Fixed)</label>
+                      <Input value={form.route?.departure || ''} onChange={(e) => handleRouteChange('departure', e.target.value)} placeholder="Enter main source" className="h-11 rounded-lg" />
+                    </div>
+
+                    {/* Destination (Fixed) */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Destination (Fixed)</label>
+                      <Input value={form.route?.arrival || ''} onChange={(e) => handleRouteChange('arrival', e.target.value)} placeholder="Enter main destination" className="h-11 rounded-lg" />
+                    </div>
+
+                    {/* Route Segments (From → To) */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-4">Route Segments (From → To)</label>
+                      <div className="space-y-3">
+                        {((form.route?.stops as any) || []).map((s: any, idx: number) => (
+                          <div key={idx} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Input value={s.title || ''} onChange={(e) => handleRouteStopChange(idx, 'title', e.target.value)} placeholder="From" className="h-11 rounded-lg" />
+                              <Input value={s.desc || ''} onChange={(e) => handleRouteStopChange(idx, 'desc', e.target.value)} placeholder="To" className="h-11 rounded-lg" />
+                            </div>
+                            <button type="button" onClick={() => removeRouteStop(idx)} className="w-full bg-red-500 text-white font-bold h-9 rounded-lg hover:bg-red-600 text-sm">Delete</button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={addRouteStop} className="w-full mt-4 bg-blue-500 text-white font-bold h-10 rounded-lg hover:bg-blue-600 text-sm">+ Add Route Segment</button>
+                    </div>
+                  </div>
                 <div className="space-y-8">
                   {/* Highlights — rich text editors */}
                   <div className="space-y-4">
@@ -704,13 +984,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                             value={h}
                             onChange={(content) => handleArrayChange(idx, content, 'highlights')}
                             theme="snow"
-                            modules={{
-                              toolbar: [
-                                ['bold', 'italic', 'underline'],
-                                ['link'],
-                                ['clean'],
-                              ],
-                            }}
+                            modules={simpleQuillModules}
                           />
                         </div>
                         <button type="button" onClick={() => removeArrayItem(idx, 'highlights')} className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity z-10"><X className="w-4 h-4" /></button>
@@ -777,14 +1051,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                               value={item} 
                               onChange={(content) => handleArrayChange(idx, content, 'knowBeforeYouGo')}
                               theme="snow"
-                              modules={{
-                                toolbar: [
-                                  [{ 'header': [1, 2, 3, false] }],
-                                  ['bold', 'italic', 'underline'],
-                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                  ['clean']
-                                ]
-                              }}
+                              modules={simpleQuillModules}
                             />
                           </div>
                         </div>
@@ -820,14 +1087,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                                 value={item.description} 
                                 onChange={(content) => handleGroundTruthChange(idx, 'description', content)}
                                 theme="snow"
-                                modules={{
-                                  toolbar: [
-                                    [{ 'header': [1, 2, 3, false] }],
-                                    ['bold', 'italic', 'underline'],
-                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                    ['clean']
-                                  ]
-                                }}
+                                modules={simpleQuillModules}
                               />
                             </div>
                           </div>
@@ -873,14 +1133,7 @@ export default function PackageDetail({ packageData: initialPackage, onDeleted, 
                               value={testimonial.review} 
                               onChange={(content) => handleTestimonialChange(idx, 'review', content)}
                               theme="snow"
-                              modules={{
-                                toolbar: [
-                                  [{ 'header': [1, 2, 3, false] }],
-                                  ['bold', 'italic', 'underline'],
-                                  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                                  ['clean']
-                                ]
-                              }}
+                              modules={simpleQuillModules}
                             />
                           </div>
 

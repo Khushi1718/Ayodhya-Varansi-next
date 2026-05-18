@@ -101,6 +101,14 @@ export interface Package {
   groundTruth?: GroundTruth[];
   testimonials?: Testimonial[];
   cardKeyPoints?: string[];
+  // New CMS-driven fields
+  benefits?: Record<string, boolean> | string[];
+  route?: {
+    overview?: string;
+    departure?: string;
+    arrival?: string;
+    stops?: { title: string; desc?: string }[];
+  };
 }
 
 export interface PackageListProps {

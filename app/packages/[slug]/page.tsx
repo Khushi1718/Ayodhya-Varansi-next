@@ -125,7 +125,37 @@ async function getPackage(slug: string) {
     const pkg = await db.collection("packages").findOne(query);
     if (!pkg) return null;
 
-    // Merge with dummy data for complete structure
+    // Ensure CMS contains expected fields for frontend rendering.
+    // If fields are missing, add sensible defaults in the DB so CMS + API stay in sync.
+    const updates: Record<string, unknown> = {};
+    if (pkg.benefits === undefined) {
+      updates.benefits = {
+        transferIncluded: false,
+        stayIncluded: false,
+        breakfastIncluded: false,
+        sightseeingIncluded: false,
+      };
+    }
+    if (pkg.route === undefined) {
+      updates.route = {
+        overview: "",
+        departure: "",
+        arrival: "",
+        stops: [],
+      };
+    }
+
+    if (Object.keys(updates).length > 0) {
+      try {
+        await db.collection("packages").updateOne({ _id: pkg._id }, { $set: updates });
+        // merge updates into pkg object locally so we return the new shape
+        Object.assign(pkg, updates);
+      } catch (err) {
+        console.error("Failed to write default CMS fields:", err);
+      }
+    }
+
+    // Merge with dummy data for complete structure (front-end prefers these keys)
     return {
       ...dummyPackage,
       ...pkg,
@@ -140,6 +170,9 @@ async function getPackage(slug: string) {
       groundTruth: pkg.groundTruth || [],
       testimonials: pkg.testimonials || dummyPackage.testimonials,
       cardKeyPoints: pkg.cardKeyPoints || [],
+      // CMS-owned fields
+      benefits: pkg.benefits || updates.benefits || {},
+      route: pkg.route || updates.route || null,
     };
   } catch (error) {
     console.error("Error fetching package:", error);
